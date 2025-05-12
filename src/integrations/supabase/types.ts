@@ -30,6 +30,33 @@ export type Database = {
         }
         Relationships: []
       }
+      usuarios: {
+        Row: {
+          email: string | null
+          id: string
+          is_approved: boolean | null
+          last_active: string | null
+          nome: string | null
+          perfil_id: string | null
+        }
+        Insert: {
+          email?: string | null
+          id: string
+          is_approved?: boolean | null
+          last_active?: string | null
+          nome?: string | null
+          perfil_id?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          is_approved?: boolean | null
+          last_active?: string | null
+          nome?: string | null
+          perfil_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

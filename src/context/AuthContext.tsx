@@ -15,6 +15,16 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+// Define interface for usuario data to enforce type safety
+interface Usuario {
+  id: string;
+  perfil_id: string | null;
+  nome: string | null;
+  email: string | null;
+  is_approved: boolean | null;
+  last_active: string | null;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -138,11 +148,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       // Get user profile to check if approved
+      // Note: We're using a type assertion here since the Supabase client types 
+      // may not be updated with our new table yet
       const { data: profileData, error: profileError } = await supabase
         .from('usuarios')
         .select('*')
         .eq('id', data.user.id)
-        .single();
+        .single() as { data: Usuario | null, error: any };
         
       if (profileError && profileError.code !== 'PGRST116') {
         throw profileError;

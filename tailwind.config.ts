@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -24,6 +25,13 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				nebula: {
+					purple: "#8A65DF",
+					blue: "#5B9DF1",
+					dark: "#121212",
+					light: "#F8F9FA",
+					gray: "#2A2A2A"
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
@@ -84,11 +92,18 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'twinkle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'twinkle-1': 'twinkle 2s ease-in-out infinite',
+				'twinkle-2': 'twinkle 3s ease-in-out infinite 0.5s',
+				'twinkle-3': 'twinkle 4s ease-in-out infinite 1s'
 			}
 		}
 	},

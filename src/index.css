@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,19 +36,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -98,4 +92,64 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.message-bubble {
+  max-width: 80%;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.message-bubble img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.message-bubble code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.message-bubble pre {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.message-bubble p {
+  margin: 5px 0;
+}
+
+.message-bubble ul, .message-bubble ol {
+  padding-left: 20px;
+}
+
+.message-bubble a {
+  color: #5B9DF1;
+  text-decoration: underline;
+}
+
+.message-bubble blockquote {
+  border-left: 3px solid #8A65DF;
+  padding-left: 10px;
+  margin: 10px 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.space-background {
+  background-color: #070B24;
+  background-image: radial-gradient(circle at 50% 50%, rgba(138, 101, 223, 0.1) 0%, transparent 30%),
+                    radial-gradient(circle at 80% 20%, rgba(91, 157, 241, 0.1) 0%, transparent 20%);
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.star {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
+  z-index: 1;
 }

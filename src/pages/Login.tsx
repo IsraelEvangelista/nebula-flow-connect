@@ -5,11 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/context/AuthContext';
 import NebulaBackground from '@/components/backgrounds/NebulaBackground';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Login: React.FC = () => {
+  // Login state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, loginWithGoogle, isLoading } = useAuth();
+  
+  // Register state
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nome, setNome] = useState('');
+
+  // Auth hooks
+  const { login, loginWithGoogle, signUp, isLoading } = useAuth();
   
   // Create pulsating effect for the logo
   const [pulseIntensity, setPulseIntensity] = useState(0);
@@ -34,14 +44,31 @@ const Login: React.FC = () => {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     login(email, password);
   };
 
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validações básicas
+    if (registerPassword !== confirmPassword) {
+      alert("As senhas não conferem");
+      return;
+    }
+    
+    if (registerPassword.length < 6) {
+      alert("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    
+    signUp(registerEmail, registerPassword, nome);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <NebulaBackground starCount={200} />
+      <NebulaBackground starCount={300} />
       
       <div className="relative z-10 w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
@@ -66,48 +93,121 @@ const Login: React.FC = () => {
         
         <Card className="bg-nebula-gray/70 backdrop-blur-md border-neutral-700 text-white">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-center">Entrar</CardTitle>
+            <CardTitle className="text-xl text-center">Bem-vindo</CardTitle>
             <CardDescription className="text-neutral-300 text-center">
-              Entre com sua conta para acessar o assistente
+              Acesse ou crie uma conta para utilizar o assistente
             </CardDescription>
           </CardHeader>
           
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Input
-                  id="email"
-                  placeholder="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                  className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400"
-                  required
-                />
-              </div>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4 bg-nebula-dark/70">
+                <TabsTrigger value="login">Entrar</TabsTrigger>
+                <TabsTrigger value="register">Cadastrar</TabsTrigger>
+              </TabsList>
               
-              <div className="space-y-2">
-                <Input
-                  id="password"
-                  placeholder="Senha"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400"
-                  required
-                />
-              </div>
+              <TabsContent value="login">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Input
+                      id="email"
+                      placeholder="Email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isLoading}
+                      className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Input
+                      id="password"
+                      placeholder="Senha"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
+                      className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400"
+                      required
+                    />
+                  </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:opacity-90"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:opacity-90"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Entrando...' : 'Entrar'}
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="register">
+                <form onSubmit={handleRegister} className="space-y-3">
+                  <div>
+                    <Input
+                      id="nome"
+                      placeholder="Nome completo"
+                      type="text"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      disabled={isLoading}
+                      className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400 mb-2"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Input
+                      id="register-email"
+                      placeholder="Email"
+                      type="email"
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      disabled={isLoading}
+                      className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400 mb-2"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Input
+                      id="register-password"
+                      placeholder="Senha (mín. 6 caracteres)"
+                      type="password"
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      disabled={isLoading}
+                      className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400 mb-2"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Input
+                      id="confirm-password"
+                      placeholder="Confirme a senha"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isLoading}
+                      className="bg-nebula-dark/50 text-white border-neutral-600 placeholder:text-neutral-400"
+                      required
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:opacity-90 mt-2"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Cadastrando...' : 'Cadastrar'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
             
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">

@@ -11,6 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  signUp: (email: string, password: string, nome?: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -125,6 +126,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const signUp = async (email: string, password: string, nome?: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Clean up existing auth state
+      cleanupAuthState();
+      
+      // Perform signup
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            nome: nome || email.split('@')[0], // Use name or extract from email
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Cadastro realizado com sucesso",
+        description: "Sua conta foi criada. Por favor, aguarde aprovação do administrador.",
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Erro no cadastro",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao criar sua conta",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -201,7 +238,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/chat`
+          redirectTo: `${window.location.origin}/auth/callback`
         }
       });
       
@@ -252,6 +289,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading, 
         login, 
         loginWithGoogle, 
+        signUp,
         logout,
         isAuthenticated: !!user
       }}

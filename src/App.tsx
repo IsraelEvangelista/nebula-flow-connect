@@ -10,6 +10,7 @@ import { BackgroundProvider } from "./context/BackgroundContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Login from "./pages/Login";
+import AuthCallback from "./pages/AuthCallback";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -27,6 +28,7 @@ const App = () => (
             <ChatProvider>
               <Routes>
                 <Route path="/" element={<Login />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route 
                   path="/chat" 
                   element={

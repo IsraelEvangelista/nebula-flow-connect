@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from './AuthContext';
+import { supabase } from "@/integrations/supabase/client";
 
 export type MessageType = 'text' | 'image' | 'audio' | 'document';
 
@@ -17,6 +19,7 @@ export interface Message {
   sender: 'user' | 'assistant';
   timestamp: Date;
   attachments?: Attachment[];
+  messageType?: string;
 }
 
 interface ChatContextType {
@@ -32,6 +35,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user, session } = useAuth();
 
   // Load messages from localStorage on initial mount
   useEffect(() => {
@@ -56,11 +60,33 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('chatMessages', JSON.stringify(messages));
   }, [messages]);
 
+  const determineMessageType = (content: string, attachments?: Attachment[]): string => {
+    if (!content && (!attachments || attachments.length === 0)) {
+      return 'unknown';
+    }
+    
+    // If there are attachments, determine by the first one
+    if (attachments && attachments.length > 0) {
+      switch(attachments[0].type) {
+        case 'image': return 'image';
+        case 'audio': return 'audio';
+        case 'document': return 'document';
+        default: return 'conversation';
+      }
+    }
+    
+    // If only text
+    return 'conversation';
+  };
+
   const sendMessage = async (content: string, attachments?: Attachment[]) => {
     if (!content.trim() && (!attachments || attachments.length === 0)) return;
 
     try {
       setIsLoading(true);
+      
+      // Determine message type
+      const messageType = determineMessageType(content, attachments);
       
       // Create user message
       const userMessage: Message = {
@@ -68,7 +94,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         content,
         sender: 'user',
         timestamp: new Date(),
-        attachments
+        attachments,
+        messageType
       };
       
       // Add user message to state
@@ -78,12 +105,19 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       const webhookData = {
         message: content,
         timestamp: new Date().toISOString(),
+        messageType,
         attachments: attachments ? attachments.map(att => ({
           type: att.type,
           data: att.data,
           name: att.name,
           mimeType: att.mimeType
-        })) : []
+        })) : [],
+        session: {
+          userId: user?.id || null,
+          userEmail: user?.email || null,
+          sessionId: session?.access_token?.substring(0, 8) || null,
+          timestamp: new Date().toISOString()
+        }
       };
 
       // Send to webhook
@@ -110,7 +144,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         content: responseData.reply || "Olá! Este é um assistente de demonstração. Em breve o webhook real será implementado.",
         sender: 'assistant',
         timestamp: new Date(),
-        attachments: responseData.attachments
+        attachments: responseData.attachments,
+        messageType: 'conversation'
       };
 
       // Add assistant message to state
@@ -129,7 +164,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         id: (Date.now() + 1).toString(),
         content: "Desculpe, estou com dificuldades para processar sua mensagem no momento. Por favor, tente novamente mais tarde.",
         sender: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
+        messageType: 'conversation'
       };
       
       setMessages(prevMessages => [...prevMessages, assistantMessage]);

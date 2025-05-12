@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, ChangeEvent } from 'react';
 import { useChat, type Attachment } from '@/context/ChatContext';
-import { Send, Mic, MicOff, Image, File } from 'lucide-react';
+import { Send, Mic, MicOff, Image, File, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +12,7 @@ const MessageInput: React.FC = () => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { sendMessage, isLoading } = useChat();
   const { toast } = useToast();
   
@@ -37,6 +38,12 @@ const MessageInput: React.FC = () => {
   // Handle text change
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
+    
+    // Auto adjust textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
   };
   
   // Toggle voice recording
@@ -91,10 +98,15 @@ const MessageInput: React.FC = () => {
     e.target.value = '';
   };
   
+  // Remove attachment
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+  
   return (
     <form 
       onSubmit={handleSubmit} 
-      className="relative bg-gradient-to-r from-nebula-dark to-neutral-900 p-4 border-t border-neutral-800"
+      className="relative p-4 border-t border-neutral-800 bg-gradient-to-r from-nebula-dark to-neutral-900"
     >
       {/* Attachments preview */}
       {attachments.length > 0 && (
@@ -102,44 +114,50 @@ const MessageInput: React.FC = () => {
           {attachments.map((attachment, index) => (
             <div 
               key={index} 
-              className="bg-nebula-gray rounded-md p-1 text-xs text-white flex items-center"
+              className="bg-nebula-gray/50 backdrop-blur-md rounded-lg p-2 text-xs text-white flex items-center"
             >
               {attachment.type === 'image' ? '🖼️' : '📄'} {attachment.name.length > 15 
                 ? `${attachment.name.substring(0, 12)}...` 
                 : attachment.name}
               <button 
                 type="button"
-                className="ml-1 text-white/70 hover:text-white"
-                onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))}
+                className="ml-2 text-white/70 hover:text-white"
+                onClick={() => removeAttachment(index)}
               >
-                ✕
+                <X size={14} />
               </button>
             </div>
           ))}
         </div>
       )}
       
-      <div className="flex items-end gap-2">
-        <Textarea
-          value={message}
-          onChange={handleMessageChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Digite sua mensagem..."
-          className="min-h-10 max-h-40 bg-nebula-gray text-white border-none resize-none"
-          disabled={isLoading}
-        />
+      <div className="flex items-end p-3 bg-nebula-gray/50 backdrop-blur-md rounded-2xl border border-neutral-700">
+        {/* Input area */}
+        <div className="flex-1 mr-2">
+          <Textarea
+            ref={textareaRef}
+            value={message}
+            onChange={handleMessageChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Digite sua mensagem..."
+            className="bg-transparent text-white border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[40px] max-h-[120px] placeholder:text-white/50"
+            disabled={isLoading}
+            rows={1}
+          />
+        </div>
         
-        <div className="flex flex-col gap-2">
+        {/* Action buttons */}
+        <div className="flex items-center gap-1">
           {/* Image upload button */}
           <Button
             type="button"
             size="icon"
             variant="ghost"
-            className="text-white/70 hover:text-white hover:bg-nebula-gray"
+            className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
             onClick={() => imageInputRef.current?.click()}
             disabled={isLoading}
           >
-            <Image size={20} />
+            <Image size={18} />
           </Button>
           
           {/* Hidden image input */}
@@ -156,11 +174,11 @@ const MessageInput: React.FC = () => {
             type="button"
             size="icon"
             variant="ghost"
-            className="text-white/70 hover:text-white hover:bg-nebula-gray"
+            className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
           >
-            <File size={20} />
+            <File size={18} />
           </Button>
           
           {/* Hidden file input */}
@@ -180,21 +198,23 @@ const MessageInput: React.FC = () => {
               isRecording 
                 ? 'text-red-500 hover:text-red-600' 
                 : 'text-white/70 hover:text-white'
-            } hover:bg-nebula-gray`}
+            } hover:bg-nebula-blue/20 h-9 w-9`}
             onClick={toggleRecording}
             disabled={isLoading}
           >
-            {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+            {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
           </Button>
           
           {/* Send button */}
           <Button
             type="submit"
             size="icon"
-            className="bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:from-nebula-purple/90 hover:to-nebula-blue/90"
+            className={`bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:from-nebula-purple/90 hover:to-nebula-blue/90 h-9 w-9 rounded-full ${
+              (!message.trim() && attachments.length === 0) ? 'opacity-50' : ''
+            }`}
             disabled={isLoading || (!message.trim() && attachments.length === 0)}
           >
-            <Send size={20} />
+            <Send size={16} />
           </Button>
         </div>
       </div>

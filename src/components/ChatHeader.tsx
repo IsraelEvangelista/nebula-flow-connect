@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useGreeting } from '@/hooks/useGreeting';
 import { Menu, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,26 +16,72 @@ import { useNavigate } from 'react-router-dom';
 
 const ChatHeader: React.FC = () => {
   const greeting = useGreeting();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const setupMarquee = () => {
+      if (!marqueeRef.current) return;
+      
+      const marqueeElement = marqueeRef.current;
+      const textElement = marqueeElement.querySelector('.marquee-text');
+      
+      if (!textElement) return;
+      
+      // Clone the text element for a seamless loop
+      const clone = textElement.cloneNode(true);
+      marqueeElement.appendChild(clone);
+      
+      // Set the animation duration proportional to the text length
+      const text = textElement.textContent || '';
+      const scrollWidth = marqueeElement.scrollWidth;
+      const viewWidth = marqueeElement.offsetWidth;
+      const duration = scrollWidth > viewWidth ? (scrollWidth / 100) * 5 : 5;
+      
+      marqueeElement.style.setProperty('--scroll-duration', `${duration}s`);
+    };
+    
+    setupMarquee();
+    
+    // Re-setup marquee if greeting changes
+    const observer = new MutationObserver(setupMarquee);
+    if (marqueeRef.current) {
+      observer.observe(marqueeRef.current, { childList: true, subtree: true });
+    }
+    
+    return () => observer.disconnect();
+  }, [greeting]);
   
   const handleSettingsClick = () => {
     navigate('/settings');
   };
+
+  const PulsatingLogo = () => (
+    <div className="pulsating-logo relative">
+      <img 
+        src="/lovable-uploads/5b5998f2-160b-4865-a545-2c09cd692258.png" 
+        alt="Nebula Logo" 
+        className="w-10 h-10 mr-3 relative z-10"
+      />
+      <div className="absolute inset-0 bg-nebula-purple rounded-full animate-pulse-slow opacity-50 blur-md z-0"></div>
+    </div>
+  );
   
   return (
     <header className="flex items-center justify-between p-4 bg-gradient-to-r from-nebula-dark to-neutral-900 border-b border-neutral-800 text-white">
       <div className="flex items-center">
-        <img 
-          src="/lovable-uploads/5b5998f2-160b-4865-a545-2c09cd692258.png" 
-          alt="Nebula Logo" 
-          className="w-10 h-10 mr-3"
-        />
+        <PulsatingLogo />
         <h1 className="text-lg font-medium hidden sm:block">Assistente Nebula</h1>
       </div>
       
-      <div className="flex-1 mx-4 text-center text-sm sm:text-base">
-        {greeting}
+      <div 
+        ref={marqueeRef}
+        className="marquee flex-1 mx-4 overflow-hidden whitespace-nowrap"
+      >
+        <span className="marquee-text inline-block text-sm sm:text-base">
+          {greeting}
+        </span>
       </div>
       
       <div>
@@ -46,7 +92,7 @@ const ChatHeader: React.FC = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-nebula-gray text-white border-neutral-700">
-            <DropdownMenuLabel>Opções</DropdownMenuLabel>
+            <DropdownMenuLabel>Olá, {user?.email?.split('@')[0]}</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-neutral-700" />
             <DropdownMenuItem onClick={handleSettingsClick} className="cursor-pointer hover:bg-nebula-blue/20">
               <Settings className="mr-2 h-4 w-4" />

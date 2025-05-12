@@ -3,11 +3,16 @@ import React, { useRef, useEffect } from 'react';
 import ChatHeader from '@/components/ChatHeader';
 import MessageBubble from '@/components/MessageBubble';
 import MessageInput from '@/components/MessageInput';
-import StarBackground from '@/components/StarBackground';
 import { useChat } from '@/context/ChatContext';
+import { useBackground } from '@/context/BackgroundContext';
+import DeepSpaceBackground from '@/components/backgrounds/DeepSpaceBackground';
+import NebulaBackground from '@/components/backgrounds/NebulaBackground';
+import SunlitSpaceBackground from '@/components/backgrounds/SunlitSpaceBackground';
+import CustomBackground from '@/components/backgrounds/CustomBackground';
 
 const Chat: React.FC = () => {
   const { messages, isLoading } = useChat();
+  const { backgroundType, customBackground } = useBackground();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom whenever messages change
@@ -15,12 +20,26 @@ const Chat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
+  const renderBackground = () => {
+    switch (backgroundType) {
+      case 'nebula':
+        return <NebulaBackground starCount={150} />;
+      case 'sunlit':
+        return <SunlitSpaceBackground starCount={120} />;
+      case 'custom':
+        return customBackground ? <CustomBackground imageUrl={customBackground} /> : <DeepSpaceBackground starCount={150} />;
+      case 'deep-space':
+      default:
+        return <DeepSpaceBackground starCount={150} />;
+    }
+  };
+  
   return (
     <div className="flex flex-col h-screen bg-nebula-dark">
       <ChatHeader />
       
       <main className="flex-1 overflow-y-auto p-4 relative">
-        <StarBackground starCount={150} />
+        {renderBackground()}
         
         <div className="relative z-10 space-y-4">
           {messages.length === 0 ? (
@@ -41,7 +60,7 @@ const Chat: React.FC = () => {
           
           {isLoading && (
             <div className="flex justify-start w-full">
-              <div className="message-bubble bg-nebula-gray text-white rounded-2xl p-3 ml-2">
+              <div className="message-bubble bg-nebula-gray/70 backdrop-blur-sm text-white rounded-2xl p-3 ml-2">
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 rounded-full bg-white/70 animate-pulse"></div>
                   <div className="w-2 h-2 rounded-full bg-white/70 animate-pulse delay-150"></div>

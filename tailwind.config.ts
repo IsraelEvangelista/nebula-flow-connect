@@ -96,6 +96,33 @@ export default {
 				'twinkle': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.5' }
+				},
+				'marquee': {
+					'0%': { transform: 'translateX(100%)' },
+					'100%': { transform: 'translateX(-100%)' }
+				},
+				'pulse-slow': {
+					'0%, 100%': { opacity: '0.7' },
+					'50%': { opacity: '0.3' }
+				},
+				'nebulaPulse': {
+					'0%': { transform: 'scale(1.0)', opacity: '0.7' },
+					'50%': { transform: 'scale(1.05)', opacity: '0.9' },
+					'100%': { transform: 'scale(1.0)', opacity: '0.7' }
+				},
+				'nebulaMove': {
+					'0%': { backgroundPosition: '0% 0%' },
+					'100%': { backgroundPosition: '100% 100%' }
+				},
+				'sunPulse': {
+					'0%': { opacity: '0.2' },
+					'50%': { opacity: '0.3' },
+					'100%': { opacity: '0.2' }
+				},
+				'lightRays': {
+					'0%': { opacity: '0.05' },
+					'50%': { opacity: '0.15' },
+					'100%': { opacity: '0.05' }
 				}
 			},
 			animation: {
@@ -103,7 +130,9 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'twinkle-1': 'twinkle 2s ease-in-out infinite',
 				'twinkle-2': 'twinkle 3s ease-in-out infinite 0.5s',
-				'twinkle-3': 'twinkle 4s ease-in-out infinite 1s'
+				'twinkle-3': 'twinkle 4s ease-in-out infinite 1s',
+				'marquee': 'marquee 15s linear infinite',
+				'pulse-slow': 'pulse-slow 3s ease-in-out infinite'
 			}
 		}
 	},

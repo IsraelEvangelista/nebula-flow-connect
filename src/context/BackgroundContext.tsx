@@ -1,38 +1,43 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 
-export type BackgroundType = 'deep-space' | 'nebula' | 'sunlit' | 'custom';
+type BackgroundType = 'nebula' | 'deepSpace' | 'sunlit';
 
-interface BackgroundContextType {
-  backgroundType: BackgroundType;
-  customBackground: string | null;
+interface BackgroundContextProps {
+  background: BackgroundType;
+  setBackground: (background: BackgroundType) => void;
   userBubbleColor: string;
   assistantBubbleColor: string;
-  changeBackground: (type: BackgroundType, customUrl?: string) => void;
-  changeBubbleColors: (userColor: string, assistantColor: string) => void;
+  setUserBubbleColor: (color: string) => void;
+  setAssistantBubbleColor: (color: string) => void;
 }
 
-const BackgroundContext = createContext<BackgroundContextType | undefined>(undefined);
+export const BackgroundContext = createContext<BackgroundContextProps>({
+  background: 'nebula',
+  setBackground: () => {},
+  userBubbleColor: '#1e40af', // Default blue for user
+  assistantBubbleColor: '#1f2937', // Default dark gray for assistant
+  setUserBubbleColor: () => {},
+  setAssistantBubbleColor: () => {},
+});
 
-export const BackgroundProvider = ({ children }: { children: ReactNode }) => {
-  const [backgroundType, setBackgroundType] = useState<BackgroundType>('nebula');
-  const [customBackground, setCustomBackground] = useState<string | null>(null);
-  const [userBubbleColor, setUserBubbleColor] = useState<string>('#8A65DF');
-  const [assistantBubbleColor, setAssistantBubbleColor] = useState<string>('#2A2A2A');
-  
-  // Load from localStorage on initial mount
+interface BackgroundProviderProps {
+  children: ReactNode;
+}
+
+export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({ children }) => {
+  const [background, setBackground] = useState<BackgroundType>('nebula');
+  const [userBubbleColor, setUserBubbleColor] = useState<string>('#1e40af');
+  const [assistantBubbleColor, setAssistantBubbleColor] = useState<string>('#1f2937');
+
+  // Load saved preferences from localStorage on component mount
   useEffect(() => {
-    const savedBackground = localStorage.getItem('backgroundType');
-    const savedCustomUrl = localStorage.getItem('customBackgroundUrl');
+    const savedBackground = localStorage.getItem('background');
     const savedUserBubbleColor = localStorage.getItem('userBubbleColor');
     const savedAssistantBubbleColor = localStorage.getItem('assistantBubbleColor');
     
     if (savedBackground) {
-      setBackgroundType(savedBackground as BackgroundType);
-    }
-    
-    if (savedCustomUrl) {
-      setCustomBackground(savedCustomUrl);
+      setBackground(savedBackground as BackgroundType);
     }
     
     if (savedUserBubbleColor) {
@@ -43,44 +48,30 @@ export const BackgroundProvider = ({ children }: { children: ReactNode }) => {
       setAssistantBubbleColor(savedAssistantBubbleColor);
     }
   }, []);
-  
-  const changeBackground = (type: BackgroundType, customUrl?: string) => {
-    setBackgroundType(type);
-    localStorage.setItem('backgroundType', type);
-    
-    if (type === 'custom' && customUrl) {
-      setCustomBackground(customUrl);
-      localStorage.setItem('customBackgroundUrl', customUrl);
-    }
-  };
-  
-  const changeBubbleColors = (userColor: string, assistantColor: string) => {
-    setUserBubbleColor(userColor);
-    setAssistantBubbleColor(assistantColor);
-    localStorage.setItem('userBubbleColor', userColor);
-    localStorage.setItem('assistantBubbleColor', assistantColor);
-  };
-  
+
+  // Save preferences to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('background', background);
+  }, [background]);
+
+  useEffect(() => {
+    localStorage.setItem('userBubbleColor', userBubbleColor);
+  }, [userBubbleColor]);
+
+  useEffect(() => {
+    localStorage.setItem('assistantBubbleColor', assistantBubbleColor);
+  }, [assistantBubbleColor]);
+
   return (
-    <BackgroundContext.Provider 
-      value={{ 
-        backgroundType,
-        customBackground,
-        userBubbleColor,
-        assistantBubbleColor,
-        changeBackground,
-        changeBubbleColors
-      }}
-    >
+    <BackgroundContext.Provider value={{ 
+      background, 
+      setBackground, 
+      userBubbleColor, 
+      assistantBubbleColor, 
+      setUserBubbleColor, 
+      setAssistantBubbleColor 
+    }}>
       {children}
     </BackgroundContext.Provider>
   );
-};
-
-export const useBackground = () => {
-  const context = useContext(BackgroundContext);
-  if (context === undefined) {
-    throw new Error('useBackground must be used within a BackgroundProvider');
-  }
-  return context;
 };

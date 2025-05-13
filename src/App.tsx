@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ChatProvider } from "./context/ChatContext";
 import { BackgroundProvider } from "./context/BackgroundContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
 
@@ -45,31 +46,33 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <BackgroundProvider>
-              <ChatProvider>
-                <Routes>
-                  <Route path="/" element={<Login />} />
-                  <Route path="/auth/callback" element={<AuthCallback />} />
-                  <Route 
-                    path="/chat" 
-                    element={
-                      <ProtectedRoute>
-                        <Chat />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/settings" 
-                    element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </ChatProvider>
-            </BackgroundProvider>
+            <ThemeProvider>
+              <BackgroundProvider>
+                <ChatProvider>
+                  <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route 
+                      path="/chat" 
+                      element={
+                        <ProtectedRoute>
+                          <Chat />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/settings" 
+                      element={
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </ChatProvider>
+              </BackgroundProvider>
+            </ThemeProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

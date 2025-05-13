@@ -1,253 +1,245 @@
 
-import React, { useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
-import { ArrowLeft, Check, Upload, Palette } from 'lucide-react';
-import DeepSpaceBackground from '@/components/backgrounds/DeepSpaceBackground';
-import NebulaBackground from '@/components/backgrounds/NebulaBackground';
-import SunlitSpaceBackground from '@/components/backgrounds/SunlitSpaceBackground';
-import CustomBackground from '@/components/backgrounds/CustomBackground';
-import { useBackground, BackgroundType } from '@/context/BackgroundContext';
-import { useToast } from '@/hooks/use-toast';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import { useContext, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BackgroundContext } from "@/context/BackgroundContext";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "react-router-dom";
+import { useMobile } from "@/hooks/use-mobile";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTheme } from "@/context/ThemeContext";
 
-const Settings: React.FC = () => {
+const Settings = () => {
+  const { isMobile } = useMobile();
+  const { background, setBackground, userBubbleColor, assistantBubbleColor, setUserBubbleColor, setAssistantBubbleColor } = useContext(BackgroundContext);
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { 
-    backgroundType, 
-    customBackground, 
-    changeBackground, 
-    userBubbleColor, 
-    assistantBubbleColor, 
-    changeBubbleColors 
-  } = useBackground();
-  const { toast } = useToast();
-  const [localCustomBackground, setLocalCustomBackground] = useState<string | null>(customBackground);
-  const customBackgroundInputRef = useRef<HTMLInputElement>(null);
-  
-  const [localUserBubbleColor, setLocalUserBubbleColor] = useState(userBubbleColor || '#8A65DF');
-  const [localAssistantBubbleColor, setLocalAssistantBubbleColor] = useState(assistantBubbleColor || '#2A2A2A');
-  
-  const handleBackgroundChange = (type: BackgroundType) => {
-    changeBackground(type);
-    toast({
-      title: "Plano de fundo alterado",
-      description: "O plano de fundo do chat foi atualizado.",
-    });
-  };
-  
-  const handleCustomBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        const result = event.target.result as string;
-        setLocalCustomBackground(result);
-        changeBackground('custom', result);
-        
-        toast({
-          title: "Imagem personalizada carregada",
-          description: "Seu plano de fundo personalizado foi configurado.",
-        });
-      }
-    };
-    
-    reader.readAsDataURL(file);
-    
-    // Reset input
-    e.target.value = '';
-  };
-  
-  const handleBubbleColorChange = () => {
-    changeBubbleColors(localUserBubbleColor, localAssistantBubbleColor);
-    toast({
-      title: "Cores alteradas",
-      description: "As cores dos balões de chat foram atualizadas.",
-    });
-  };
-  
-  const renderPreview = (type: BackgroundType) => {
-    const isActive = type === backgroundType;
-    
-    return (
-      <button
-        className={`relative w-full aspect-[16/9] rounded-lg overflow-hidden border-2 ${
-          isActive ? 'border-nebula-blue' : 'border-transparent hover:border-white/20'
-        } transition-colors focus:outline-none focus:ring-2 focus:ring-nebula-blue`}
-        onClick={() => handleBackgroundChange(type)}
-      >
-        <div className="absolute inset-0">
-          {type === 'deep-space' && <DeepSpaceBackground starCount={50} />}
-          {type === 'nebula' && <NebulaBackground starCount={50} />}
-          {type === 'sunlit' && <SunlitSpaceBackground starCount={40} />}
-          {type === 'custom' && localCustomBackground && <CustomBackground imageUrl={localCustomBackground} />}
-        </div>
-        
-        {isActive && (
-          <div className="absolute top-2 right-2 bg-nebula-blue rounded-full p-1">
-            <Check size={16} className="text-white" />
-          </div>
-        )}
-        
-        {/* Label */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-sm p-2 text-white">
-          {type === 'deep-space' && 'Espaço Profundo'}
-          {type === 'nebula' && 'Nebulosa'}
-          {type === 'sunlit' && 'Amanhecer Estelar'}
-          {type === 'custom' && 'Personalizado'}
-        </div>
-      </button>
-    );
-  };
-  
-  return (
-    <div className="min-h-screen text-white p-4 relative overflow-y-auto">
-      <NebulaBackground starCount={100} />
-      
-      <div className="relative z-10 max-w-3xl mx-auto pb-16">
-        <div className="mb-6">
-          <Button
-            onClick={() => navigate('/chat')}
-            variant="outline"
-            className="mb-4 border-white/20 bg-nebula-gray/30 backdrop-blur-md text-white hover:bg-nebula-blue/20 hover:text-white"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para o chat
-          </Button>
-          
-          <h1 className="text-2xl font-bold text-white">Configurações</h1>
-          <p className="text-neutral-300">Gerencie suas preferências de aplicativo</p>
-        </div>
-        
-        <div className="space-y-6">
-          <Card className="bg-nebula-gray/40 backdrop-blur-md border-neutral-700">
-            <CardHeader>
-              <CardTitle className="text-white">Conta</CardTitle>
-              <CardDescription className="text-neutral-300">
-                Suas informações pessoais
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-neutral-300">Email</p>
-                <p className="text-white">{user?.email}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-neutral-300">Status da conta</p>
-                <p className="text-green-500">
-                  Ativo
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-nebula-gray/40 backdrop-blur-md border-neutral-700">
-            <CardHeader>
-              <CardTitle className="text-white">Aparência</CardTitle>
-              <CardDescription className="text-neutral-300">
-                Personalize a aparência do assistente
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <h3 className="text-sm font-medium mb-3 text-white">Plano de Fundo do Chat</h3>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                {renderPreview('deep-space')}
-                {renderPreview('nebula')}
-                {renderPreview('sunlit')}
-                {(customBackground || localCustomBackground) && renderPreview('custom')}
-              </div>
-              
-              <div className="mb-8">
-                <Button 
-                  variant="outline" 
-                  className="w-full border-dashed border-white/20 bg-white/5 hover:bg-white/10 text-white"
-                  onClick={() => customBackgroundInputRef.current?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {localCustomBackground ? 'Trocar imagem personalizada' : 'Carregar imagem personalizada'}
-                </Button>
-                <input 
-                  ref={customBackgroundInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCustomBackgroundUpload}
-                  className="hidden"
-                />
-                <p className="text-xs text-neutral-300 mt-2 text-center">
-                  Recomendado: imagens escuras para melhor legibilidade
-                </p>
-              </div>
+  const [showAnimations, setShowAnimations] = useState(true);
+  const [starDensity, setStarDensity] = useState(100);
+  const { theme, setTheme } = useTheme();
 
-              <h3 className="text-sm font-medium mb-3 text-white">Cores dos Balões de Chat</h3>
-              
-              <div className="space-y-4 mb-6">
-                <div>
-                  <Label className="text-white mb-2 block">Cor do balão do usuário</Label>
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-8 h-8 rounded-full border border-white/20"
-                      style={{ backgroundColor: localUserBubbleColor }}
-                    />
-                    <input
-                      type="color"
-                      value={localUserBubbleColor}
-                      onChange={(e) => setLocalUserBubbleColor(e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label className="text-white mb-2 block">Cor do balão do assistente</Label>
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-8 h-8 rounded-full border border-white/20"
-                      style={{ backgroundColor: localAssistantBubbleColor }}
-                    />
-                    <input
-                      type="color"
-                      value={localAssistantBubbleColor}
-                      onChange={(e) => setLocalAssistantBubbleColor(e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  onClick={handleBubbleColorChange}
-                  variant="outline"
-                  className="w-full mt-2 bg-white/10 hover:bg-white/20 text-white border-white/20"
-                >
-                  <Palette className="mr-2 h-4 w-4" />
-                  Aplicar cores
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-nebula-gray/40 backdrop-blur-md border-neutral-700">
-            <CardHeader>
-              <CardTitle className="text-white">Sobre</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-neutral-300 mb-2">
-                Assistente Nebula v1.0
-              </p>
-              <p className="text-xs text-neutral-400">
-                Um assistente inteligente conectado ao n8n para automatizar suas tarefas.
-              </p>
-            </CardContent>
-          </Card>
+  return (
+    <div className="flex flex-col w-full h-screen overflow-auto text-white">
+      <div className="container mx-auto p-4 max-w-4xl">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Configurações</h1>
+          <Button onClick={() => navigate("/chat")} variant="outline" className="text-white border-white hover:bg-slate-800">
+            Voltar para o Chat
+          </Button>
         </div>
+
+        <Tabs defaultValue="appearance" className="w-full">
+          <TabsList className="grid grid-cols-3 mb-8 bg-slate-800">
+            <TabsTrigger value="appearance" className="text-white data-[state=active]:bg-slate-700">Aparência</TabsTrigger>
+            <TabsTrigger value="account" className="text-white data-[state=active]:bg-slate-700">Conta</TabsTrigger>
+            <TabsTrigger value="notifications" className="text-white data-[state=active]:bg-slate-700">Notificações</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="appearance">
+            <Card className="bg-slate-800/40 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Aparência</CardTitle>
+                <CardDescription className="text-slate-300">
+                  Personalize a aparência da interface do chat
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-white">Plano de Fundo</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div 
+                      className={`rounded-lg p-4 border-2 cursor-pointer bg-black ${background === 'nebula' ? 'border-primary' : 'border-slate-700'}`}
+                      onClick={() => setBackground('nebula')}
+                    >
+                      <div className="h-24 rounded bg-purple-900/40 flex items-center justify-center mb-2">
+                        <span className="text-white text-sm">Nebulosa</span>
+                      </div>
+                    </div>
+                    <div 
+                      className={`rounded-lg p-4 border-2 cursor-pointer bg-black ${background === 'deepSpace' ? 'border-primary' : 'border-slate-700'}`}
+                      onClick={() => setBackground('deepSpace')}
+                    >
+                      <div className="h-24 rounded bg-blue-900/20 flex items-center justify-center mb-2">
+                        <span className="text-white text-sm">Espaço Profundo</span>
+                      </div>
+                    </div>
+                    <div 
+                      className={`rounded-lg p-4 border-2 cursor-pointer bg-black ${background === 'sunlit' ? 'border-primary' : 'border-slate-700'}`}
+                      onClick={() => setBackground('sunlit')}
+                    >
+                      <div className="h-24 rounded bg-amber-500/30 flex items-center justify-center mb-2">
+                        <span className="text-white text-sm">Amanhecer Estelar</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator className="my-4 bg-slate-700" />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-white">Efeitos</h3>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="animations" className="text-white">Mostrar animações</Label>
+                    <Switch 
+                      id="animations" 
+                      checked={showAnimations} 
+                      onCheckedChange={setShowAnimations} 
+                    />
+                  </div>
+                  
+                  {showAnimations && (
+                    <div className="space-y-3">
+                      <Label htmlFor="starDensity" className="text-white">Densidade de estrelas: {starDensity}</Label>
+                      <Input 
+                        id="starDensity" 
+                        type="range" 
+                        min="50" 
+                        max="200" 
+                        value={starDensity} 
+                        onChange={(e) => setStarDensity(parseInt(e.target.value))} 
+                        className="w-full" 
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <Separator className="my-4 bg-slate-700" />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-white">Tema</h3>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="darkMode" className="text-white">Modo escuro</Label>
+                    <Switch 
+                      id="darkMode" 
+                      checked={theme === 'dark'} 
+                      onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} 
+                    />
+                  </div>
+                </div>
+
+                <Separator className="my-4 bg-slate-700" />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-white">Cores dos balões de chat</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="userBubbleColor" className="text-white">Cor do balão do usuário</Label>
+                      <div className="flex items-center gap-3">
+                        <Input 
+                          id="userBubbleColor" 
+                          type="color" 
+                          value={userBubbleColor} 
+                          onChange={(e) => setUserBubbleColor(e.target.value)}
+                          className="w-14 h-10 p-1 rounded" 
+                        />
+                        <div 
+                          className="p-4 rounded-lg flex-grow"
+                          style={{ backgroundColor: userBubbleColor }}
+                        >
+                          <span className="text-xs font-mono">
+                            {userBubbleColor}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="assistantBubbleColor" className="text-white">Cor do balão do assistente</Label>
+                      <div className="flex items-center gap-3">
+                        <Input 
+                          id="assistantBubbleColor" 
+                          type="color" 
+                          value={assistantBubbleColor} 
+                          onChange={(e) => setAssistantBubbleColor(e.target.value)}
+                          className="w-14 h-10 p-1 rounded" 
+                        />
+                        <div 
+                          className="p-4 rounded-lg flex-grow"
+                          style={{ backgroundColor: assistantBubbleColor }}
+                        >
+                          <span className="text-xs font-mono">
+                            {assistantBubbleColor}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="account">
+            <Card className="bg-slate-800/40 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Configurações da Conta</CardTitle>
+                <CardDescription className="text-slate-300">
+                  Gerencie as configurações da sua conta
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-medium text-white">Perfil</h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-white">Nome de usuário</Label>
+                    <Input id="username" placeholder="Seu nome" className="bg-slate-700 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-white">Email</Label>
+                    <Input id="email" type="email" placeholder="seu@email.com" className="bg-slate-700 text-white" />
+                  </div>
+                </div>
+
+                <Separator className="my-4 bg-slate-700" />
+
+                <div className="space-y-3">
+                  <h3 className="text-lg font-medium text-white">Senha</h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword" className="text-white">Senha atual</Label>
+                    <Input id="currentPassword" type="password" className="bg-slate-700 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword" className="text-white">Nova senha</Label>
+                    <Input id="newPassword" type="password" className="bg-slate-700 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword" className="text-white">Confirmar senha</Label>
+                    <Input id="confirmPassword" type="password" className="bg-slate-700 text-white" />
+                  </div>
+                  <Button className="mt-2">Alterar senha</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <Card className="bg-slate-800/40 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Notificações</CardTitle>
+                <CardDescription className="text-slate-300">
+                  Configure como você deseja receber as notificações
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="emailNotifications" className="text-white">Notificações por email</Label>
+                    <Switch id="emailNotifications" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="pushNotifications" className="text-white">Notificações push</Label>
+                    <Switch id="pushNotifications" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="soundAlerts" className="text-white">Alertas sonoros</Label>
+                    <Switch id="soundAlerts" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

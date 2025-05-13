@@ -12,7 +12,7 @@ interface BackgroundContextType {
 const BackgroundContext = createContext<BackgroundContextType | undefined>(undefined);
 
 export const BackgroundProvider = ({ children }: { children: ReactNode }) => {
-  const [backgroundType, setBackgroundType] = useState<BackgroundType>('deep-space');
+  const [backgroundType, setBackgroundType] = useState<BackgroundType>('nebula');
   const [customBackground, setCustomBackground] = useState<string | null>(null);
   
   // Load from localStorage on initial mount

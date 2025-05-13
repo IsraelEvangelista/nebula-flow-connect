@@ -88,7 +88,7 @@ const Settings: React.FC = () => {
   
   return (
     <div className="min-h-screen text-white p-4 relative">
-      <DeepSpaceBackground starCount={100} />
+      <NebulaBackground starCount={100} />
       
       <div className="relative z-10 max-w-3xl mx-auto">
         <div className="mb-6">

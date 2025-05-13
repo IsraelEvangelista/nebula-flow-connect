@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
 
+// Types
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -26,21 +27,24 @@ interface Usuario {
   last_active: string | null;
 }
 
+// Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  // State
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Hooks
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Check if user is already logged in
+  // Setup auth state listener and check for existing session
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      setIsLoading(true);
-      
-      // Set up auth state listener first
+    const setupAuth = async () => {
+      // First set up the auth state listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, currentSession) => {
           // Handle auth state changes
@@ -59,17 +63,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
-      // Check for session inactivity
+      // Setup session timeout
       setupSessionTimeout();
       
       setIsLoading(false);
       
+      // Cleanup subscription on unmount
       return () => {
         subscription.unsubscribe();
       };
     };
     
-    checkAuthStatus();
+    setupAuth();
   }, [navigate]);
   
   // Setup session timeout
@@ -109,6 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
+  // Clean up auth state tokens from storage
   const cleanupAuthState = () => {
     // Remove standard auth tokens
     localStorage.removeItem('supabase.auth.token');
@@ -126,6 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // Sign up function
   const signUp = async (email: string, password: string, nome?: string) => {
     try {
       setIsLoading(true);
@@ -162,6 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Login function
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -169,7 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clean up existing auth state
       cleanupAuthState();
       
-      // Attempt global sign out
+      // Attempt global sign out to clear any existing sessions
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
@@ -185,8 +193,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       // Get user profile to check if approved
-      // Note: We're using a type assertion here since the Supabase client types 
-      // may not be updated with our new table yet
       const { data: profileData, error: profileError } = await supabase
         .from('usuarios')
         .select('*')
@@ -207,6 +213,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           variant: "destructive",
         });
       } else {
+        // Navigate to chat page on successful login
         navigate('/chat');
       }
       
@@ -221,6 +228,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Login with Google function
   const loginWithGoogle = async () => {
     try {
       setIsLoading(true);
@@ -228,13 +236,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clean up existing auth state
       cleanupAuthState();
       
-      // Attempt global sign out
+      // Attempt global sign out to clear any existing sessions
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
         // Continue even if this fails
       }
       
+      // Sign in with Google OAuth
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -254,6 +263,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Logout function
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -281,24 +291,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Context value
+  const contextValue = {
+    user,
+    session,
+    isLoading,
+    login,
+    loginWithGoogle,
+    signUp,
+    logout,
+    isAuthenticated: !!user
+  };
+
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        session,
-        isLoading, 
-        login, 
-        loginWithGoogle, 
-        signUp,
-        logout,
-        isAuthenticated: !!user
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

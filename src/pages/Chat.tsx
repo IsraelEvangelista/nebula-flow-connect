@@ -27,7 +27,7 @@ const Chat: React.FC = () => {
       case 'sunlit':
         return <SunlitSpaceBackground starCount={120} />;
       case 'custom':
-        return customBackground ? <CustomBackground imageUrl={customBackground} /> : <DeepSpaceBackground starCount={150} />;
+        return customBackground ? <CustomBackground imageUrl={customBackground} /> : <NebulaBackground starCount={150} />;
       case 'deep-space':
       default:
         return <DeepSpaceBackground starCount={150} />;

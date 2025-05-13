@@ -40,8 +40,7 @@ const SunlitSpaceBackground: React.FC<SunlitSpaceBackgroundProps> = ({ starCount
       star.style.opacity = `${0.4 + Math.random() * 0.6}`;
       
       // Add animation
-      const animationClass = `animate-twinkle-${Math.floor(Math.random() * 3) + 1}`;
-      star.classList.add(animationClass);
+      star.classList.add(`animate-twinkle-${Math.floor(Math.random() * 3) + 1}`);
       
       // Add star to container
       container.appendChild(star);
@@ -56,26 +55,34 @@ const SunlitSpaceBackground: React.FC<SunlitSpaceBackgroundProps> = ({ starCount
       {/* Primary dark space background */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0f1425] to-[#0e0e1e]" />
       
-      {/* Sun glow in the corner */}
+      {/* Improved Sun glow - no more square edges */}
       <div 
-        className="absolute opacity-25"
+        className="absolute rounded-full opacity-25"
         style={{
-          width: '70%',
-          height: '70%',
-          top: '-15%',
-          right: '-15%',
-          background: 'radial-gradient(circle, rgba(255,196,133,0.8) 0%, rgba(248,177,92,0.3) 30%, transparent 70%)',
-          boxShadow: '0 0 100px rgba(255,196,133,0.5), 0 0 200px rgba(248,177,92,0.3)',
+          width: '100%',
+          height: '100%',
+          top: '-40%',
+          right: '-30%',
+          background: 'radial-gradient(circle, rgba(255,196,133,0.6) 0%, rgba(248,177,92,0.2) 20%, transparent 70%)',
+          boxShadow: '0 0 100px rgba(255,196,133,0.3), 0 0 200px rgba(248,177,92,0.2)',
           animation: 'sunPulse 8s infinite alternate'
         }}
       />
       
-      {/* Light rays */}
+      {/* Light rays - improved gradient */}
       <div 
         className="absolute inset-0 opacity-10"
         style={{
-          background: 'linear-gradient(135deg, rgba(255,196,133,0.4) 0%, transparent 50%)',
+          background: 'radial-gradient(circle at 90% 0%, rgba(255,196,133,0.3) 0%, transparent 70%)',
           animation: 'lightRays 15s infinite alternate'
+        }}
+      />
+      
+      {/* Additional ambient light */}
+      <div 
+        className="absolute inset-0 opacity-15"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,180,120,0.15) 0%, transparent 60%)',
         }}
       />
     </div>

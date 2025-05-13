@@ -169,15 +169,15 @@
   z-index: 1;
 }
 
-.star.twinkle-1 {
+.star.animate-twinkle-1 {
   animation: twinkle 2s ease-in-out infinite;
 }
 
-.star.twinkle-2 {
+.star.animate-twinkle-2 {
   animation: twinkle 3s ease-in-out infinite;
 }
 
-.star.twinkle-3 {
+.star.animate-twinkle-3 {
   animation: twinkle 4s ease-in-out infinite;
 }
 
@@ -253,7 +253,7 @@
 .marquee .marquee-text {
   width: max-content;
   transform: translateX(var(--move-initial));
-  animation: marquee var(--scroll-duration, 10s) linear infinite;
+  animation: marquee var(--scroll-duration, 20s) linear infinite;
 }
 
 @keyframes marquee {

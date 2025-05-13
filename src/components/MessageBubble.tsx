@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import MarkdownRenderer from './MarkdownRenderer';
 import { type Attachment } from '@/context/ChatContext';
+import { useBackground } from '@/context/BackgroundContext';
 
 interface MessageBubbleProps {
   content: string;
@@ -19,18 +20,30 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   attachments 
 }) => {
   const isUser = sender === 'user';
+  const { userBubbleColor, assistantBubbleColor } = useBackground();
   
   // Format timestamp to HH:mm
   const formattedTime = format(timestamp, 'HH:mm', { locale: ptBR });
   
+  // Dynamic background style based on user settings
+  const bubbleStyle = {
+    background: isUser 
+      ? userBubbleColor 
+      : assistantBubbleColor,
+    backgroundImage: isUser && userBubbleColor === '#8A65DF' 
+      ? 'linear-gradient(to right, #8A65DF, #5B9DF1)' 
+      : 'none'
+  };
+  
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} w-full`}>
       <div 
-        className={`message-bubble rounded-2xl p-3 ${
+        className={`message-bubble rounded-2xl p-3 text-white ${
           isUser 
-            ? 'bg-gradient-to-r from-nebula-purple to-nebula-blue text-white mr-2' 
-            : 'bg-nebula-gray text-white ml-2'
+            ? 'mr-2' 
+            : 'ml-2'
         }`}
+        style={bubbleStyle}
       >
         {/* Render attachments if any */}
         {attachments && attachments.length > 0 && (
@@ -88,7 +101,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}
         
         {/* Timestamp */}
-        <div className={`text-xs mt-1 text-right ${isUser ? 'text-white/70' : 'text-white/70'}`}>
+        <div className="text-xs mt-1 text-right text-white/70">
           {formattedTime}
         </div>
       </div>

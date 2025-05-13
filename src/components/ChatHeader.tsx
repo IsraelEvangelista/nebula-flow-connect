@@ -29,15 +29,13 @@ const ChatHeader: React.FC = () => {
       
       if (!textElement) return;
       
-      // Clone the text element for a seamless loop
-      const clone = textElement.cloneNode(true);
-      marqueeElement.appendChild(clone);
-      
-      // Set the animation duration proportional to the text length
-      const text = textElement.textContent || '';
+      // Setting the animation duration proportional to the text length,
+      // but slower than before for better readability
       const scrollWidth = marqueeElement.scrollWidth;
       const viewWidth = marqueeElement.offsetWidth;
-      const duration = scrollWidth > viewWidth ? (scrollWidth / 100) * 5 : 5;
+      
+      // Increased duration by multiplying by 10 to make it slower
+      const duration = scrollWidth > viewWidth ? (scrollWidth / 100) * 10 : 10;
       
       marqueeElement.style.setProperty('--scroll-duration', `${duration}s`);
     };
@@ -50,7 +48,13 @@ const ChatHeader: React.FC = () => {
       observer.observe(marqueeRef.current, { childList: true, subtree: true });
     }
     
-    return () => observer.disconnect();
+    // Re-setup marquee on window resize
+    window.addEventListener('resize', setupMarquee);
+    
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', setupMarquee);
+    };
   }, [greeting]);
   
   const handleSettingsClick = () => {

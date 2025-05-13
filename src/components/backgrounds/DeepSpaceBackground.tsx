@@ -30,15 +30,19 @@ const DeepSpaceBackground: React.FC<DeepSpaceBackgroundProps> = ({ starCount = 1
       // Random size (0.5px to 2px)
       const size = Math.random() * 1.5 + 0.5;
       
+      // Random animation delay
+      const delay = Math.random() * 4;
+      
       // Set star style
       star.style.width = `${size}px`;
       star.style.height = `${size}px`;
       star.style.left = `${x}px`;
       star.style.top = `${y}px`;
+      star.style.animationDelay = `${delay}s`;
       
       // Add animation
-      const animationClass = `animate-twinkle-${Math.floor(Math.random() * 3) + 1}`;
-      star.classList.add(animationClass);
+      const animationIndex = Math.floor(Math.random() * 3) + 1;
+      star.classList.add(`twinkle-${animationIndex}`);
       
       // Add star to container
       container.appendChild(star);
@@ -48,8 +52,25 @@ const DeepSpaceBackground: React.FC<DeepSpaceBackgroundProps> = ({ starCount = 1
   return (
     <div 
       ref={containerRef} 
-      className="deep-space-background absolute inset-0 z-0 bg-gradient-to-b from-nebula-dark to-[#090b1a]"
-    />
+      className="deep-space-background absolute inset-0 z-0 overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, #0B0B15 0%, #0F0F1A 50%, #131326 100%)',
+      }}
+    >
+      {/* Deep space dust effects */}
+      <div 
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: 'radial-gradient(circle at 20% 80%, rgba(16, 16, 40, 0.6) 0%, transparent 60%)',
+        }}
+      />
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          background: 'radial-gradient(circle at 80% 20%, rgba(20, 20, 50, 0.5) 0%, transparent 60%)',
+        }}
+      />
+    </div>
   );
 };
 

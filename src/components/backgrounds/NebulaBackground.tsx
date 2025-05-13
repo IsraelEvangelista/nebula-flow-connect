@@ -33,23 +33,25 @@ const NebulaBackground: React.FC<NebulaBackgroundProps> = ({ starCount = 150 }) 
       // Add variation in brightness
       const brightness = Math.random() * 0.5 + 0.5; // 50% to 100% brightness
       
+      // Random animation delay
+      const delay = Math.random() * 5;
+      
       // Set star style
       star.style.width = `${size}px`;
       star.style.height = `${size}px`;
       star.style.left = `${x}px`;
       star.style.top = `${y}px`;
       star.style.opacity = `${brightness}`;
+      star.style.animationDelay = `${delay}s`;
       
       // Create a small subset of extra bright stars
       if (Math.random() < 0.1) {
         star.style.boxShadow = `0 0 ${Math.random() * 3 + 2}px rgba(255, 255, 255, 0.8)`;
       }
       
-      // Add animation with varying speeds
-      const animationDelay = Math.random() * 5; // 0 to 5s delay
-      const animationDuration = Math.random() * 3 + 2; // 2 to 5s duration
-      
-      star.style.animation = `twinkle ${animationDuration}s ease-in-out ${animationDelay}s infinite`;
+      // Add animation
+      const animationIndex = Math.floor(Math.random() * 3) + 1;
+      star.classList.add(`twinkle-${animationIndex}`);
       
       // Add star to container
       container.appendChild(star);
@@ -59,7 +61,7 @@ const NebulaBackground: React.FC<NebulaBackgroundProps> = ({ starCount = 150 }) 
   return (
     <div 
       ref={containerRef} 
-      className="nebula-background absolute inset-0 z-0"
+      className="nebula-background absolute inset-0 z-0 overflow-hidden"
       style={{
         background: 'radial-gradient(ellipse at center, rgba(11, 10, 35, 0.8) 0%, rgb(27, 14, 59) 33%, rgb(37, 13, 76) 66%, rgba(17, 7, 36, 0.8) 100%)',
         boxShadow: 'inset 0 0 100px rgba(138, 101, 223, 0.3), inset 0 0 200px rgba(91, 157, 241, 0.2)'

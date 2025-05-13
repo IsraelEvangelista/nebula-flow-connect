@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,29 +20,6 @@ const Login: React.FC = () => {
 
   // Auth hooks
   const { login, loginWithGoogle, signUp, isLoading } = useAuth();
-  
-  // Create pulsating effect for the logo
-  const [pulseIntensity, setPulseIntensity] = useState(0);
-  
-  useEffect(() => {
-    // Create a slowly changing pulse effect
-    let animationFrame: number;
-    let start = Date.now();
-    
-    const animate = () => {
-      const elapsed = Date.now() - start;
-      // Sine wave oscillation for natural pulsing effect
-      const intensity = Math.sin(elapsed / 1000) * 0.3 + 0.7;
-      setPulseIntensity(intensity);
-      animationFrame = requestAnimationFrame(animate);
-    };
-    
-    animate();
-    
-    return () => {
-      cancelAnimationFrame(animationFrame);
-    };
-  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,14 +49,13 @@ const Login: React.FC = () => {
       
       <div className="relative z-10 w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          {/* Pulsating logo */}
+          {/* Logo with pulsation effect */}
           <div className="relative mb-4">
             <div 
               className="absolute inset-0 rounded-full blur-xl"
               style={{ 
-                background: `radial-gradient(circle, rgba(138, 101, 223, ${pulseIntensity * 0.8}) 0%, rgba(91, 157, 241, ${pulseIntensity * 0.4}) 50%, transparent 80%)`,
-                transform: `scale(${1 + pulseIntensity * 0.3})`,
-                opacity: pulseIntensity
+                background: 'radial-gradient(circle, rgba(138, 101, 223, 0.8) 0%, rgba(91, 157, 241, 0.4) 50%, transparent 80%)',
+                animation: 'pulse-slow 3s ease-in-out infinite'
               }}
             />
             <img 

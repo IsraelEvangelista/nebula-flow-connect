@@ -4,7 +4,7 @@ import { ChatHeader } from '@/components/ChatHeader';
 import { MessageBubble } from '@/components/MessageBubble';
 import MessageInput from '@/components/MessageInput';
 import { useChat } from '@/context/ChatContext';
-import { BackgroundContext } from '@/context/BackgroundContext';
+import { BackgroundContext, BackgroundType } from '@/context/BackgroundContext';
 import DeepSpaceBackground from '@/components/backgrounds/DeepSpaceBackground';
 import NebulaBackground from '@/components/backgrounds/NebulaBackground';
 import SunlitSpaceBackground from '@/components/backgrounds/SunlitSpaceBackground';

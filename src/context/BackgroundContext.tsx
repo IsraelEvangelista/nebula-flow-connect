@@ -8,6 +8,7 @@ export interface BackgroundContextProps {
   setBackground: (background: BackgroundType) => void;
   customBackground: string | null;
   setCustomBackground: (url: string | null) => void;
+  customBackgroundUrl: string | null; // Added this line to match usage in Chat.tsx
   userBubbleColor: string;
   setUserBubbleColor: (color: string) => void;
   assistantBubbleColor: string;
@@ -20,6 +21,7 @@ const BackgroundContext = createContext<BackgroundContextProps>({
   setBackground: () => {},
   customBackground: null,
   setCustomBackground: () => {},
+  customBackgroundUrl: null, // Added this line to match usage in Chat.tsx
   userBubbleColor: '#1e40af',
   setUserBubbleColor: () => {},
   assistantBubbleColor: '#1f2937',
@@ -79,6 +81,7 @@ export const BackgroundProvider: React.FC<BackgroundProviderProps> = ({ children
         setBackground,
         customBackground,
         setCustomBackground,
+        customBackgroundUrl: customBackground, // Added this line to make the property available
         userBubbleColor,
         setUserBubbleColor,
         assistantBubbleColor,

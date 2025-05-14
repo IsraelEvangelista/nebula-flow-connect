@@ -50,7 +50,10 @@ const Chat: React.FC = () => {
             messages.map((message) => (
               <MessageBubble
                 key={message.id}
-                message={message}
+                content={message.content}
+                sender={message.sender}
+                timestamp={message.timestamp}
+                attachments={message.attachments}
               />
             ))
           )}

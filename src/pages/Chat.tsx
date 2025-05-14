@@ -1,10 +1,10 @@
 
-import React, { useRef, useEffect } from 'react';
-import ChatHeader from '@/components/ChatHeader';
-import MessageBubble from '@/components/MessageBubble';
+import React, { useRef, useEffect, useContext } from 'react';
+import { ChatHeader } from '@/components/ChatHeader';
+import { MessageBubble } from '@/components/MessageBubble';
 import MessageInput from '@/components/MessageInput';
 import { useChat } from '@/context/ChatContext';
-import { useBackground } from '@/context/BackgroundContext';
+import { BackgroundContext } from '@/context/BackgroundContext';
 import DeepSpaceBackground from '@/components/backgrounds/DeepSpaceBackground';
 import NebulaBackground from '@/components/backgrounds/NebulaBackground';
 import SunlitSpaceBackground from '@/components/backgrounds/SunlitSpaceBackground';
@@ -12,7 +12,7 @@ import CustomBackground from '@/components/backgrounds/CustomBackground';
 
 const Chat: React.FC = () => {
   const { messages, isLoading } = useChat();
-  const { backgroundType, customBackground } = useBackground();
+  const { background, customBackground } = useContext(BackgroundContext);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom whenever messages change
@@ -21,14 +21,14 @@ const Chat: React.FC = () => {
   }, [messages]);
   
   const renderBackground = () => {
-    switch (backgroundType) {
+    switch (background) {
       case 'nebula':
         return <NebulaBackground starCount={150} />;
       case 'sunlit':
-        return <SunlitSpaceBackground starCount={120} />;
+        return <SunlitSpaceBackground />;
       case 'custom':
         return customBackground ? <CustomBackground imageUrl={customBackground} /> : <NebulaBackground starCount={150} />;
-      case 'deep-space':
+      case 'deepSpace':
       default:
         return <DeepSpaceBackground starCount={150} />;
     }

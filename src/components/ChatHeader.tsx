@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Settings, Moon } from "lucide-react";
 import { useGreeting } from "@/hooks/useGreeting";
 import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 export const ChatHeader = () => {
   const navigate = useNavigate();
   const greeting = useGreeting();
-  const { signOut } = useContext(AuthContext);
+  const { logout } = useAuth();
   const [greetingText, setGreetingText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [showFullText, setShowFullText] = useState(false);
@@ -54,10 +54,12 @@ export const ChatHeader = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
           <Settings className="h-5 w-5 text-white" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={signOut}>
+        <Button variant="ghost" size="icon" onClick={logout}>
           <Moon className="h-5 w-5 text-white" />
         </Button>
       </div>
     </div>
   );
 };
+
+export default ChatHeader;

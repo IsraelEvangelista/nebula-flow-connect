@@ -8,12 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/context/ThemeContext";
 
 const Settings = () => {
-  const { isMobile } = useMobile();
+  const isMobile = useIsMobile();
   const { background, setBackground, userBubbleColor, assistantBubbleColor, setUserBubbleColor, setAssistantBubbleColor } = useContext(BackgroundContext);
   const navigate = useNavigate();
   const [showAnimations, setShowAnimations] = useState(true);

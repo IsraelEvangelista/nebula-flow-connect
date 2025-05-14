@@ -1,6 +1,6 @@
 
 import { useContext } from 'react';
-import { MarkdownRenderer } from './MarkdownRenderer';
+import MarkdownRenderer from './MarkdownRenderer';
 import { BackgroundContext } from '@/context/BackgroundContext';
 
 interface MessageBubbleProps {
@@ -29,3 +29,5 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     </div>
   );
 };
+
+export default MessageBubble;

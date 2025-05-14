@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
+import Tools from "./pages/Tools";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <Settings />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/tools" 
+                      element={
+                        <ProtectedRoute>
+                          <Tools />
                         </ProtectedRoute>
                       } 
                     />

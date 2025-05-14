@@ -1,5 +1,5 @@
 
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackgroundContext } from "@/context/BackgroundContext";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTheme } from "@/context/ThemeContext";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const isMobile = useIsMobile();
@@ -18,7 +20,97 @@ const Settings = () => {
   const navigate = useNavigate();
   const [showAnimations, setShowAnimations] = useState(true);
   const [starDensity, setStarDensity] = useState(100);
-  const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  
+  // User profile data
+  const [userData, setUserData] = useState({
+    nome: "",
+    email: ""
+  });
+  
+  // Fetch user data from Supabase
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('usuarios')
+          .select('nome, email')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          console.error("Error fetching user data:", error);
+          toast({
+            title: "Erro ao carregar dados",
+            description: "Não foi possível carregar seus dados de perfil.",
+            variant: "destructive",
+          });
+        } else if (data) {
+          setUserData({
+            nome: data.nome || "",
+            email: data.email || ""
+          });
+        }
+      }
+    };
+    
+    fetchUserData();
+  }, [user, toast]);
+
+  // Handle password change
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Senhas não conferem",
+        description: "A nova senha e a confirmação de senha devem ser idênticas.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.updateUser({ 
+        password: newPassword 
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Senha alterada",
+        description: "Sua senha foi alterada com sucesso.",
+      });
+      
+      // Clear form
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message || "Não foi possível alterar sua senha.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col w-full h-screen overflow-auto text-white">
@@ -108,20 +200,6 @@ const Settings = () => {
                 <Separator className="my-4 bg-slate-700" />
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-white">Tema</h3>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="darkMode" className="text-white">Modo escuro</Label>
-                    <Switch 
-                      id="darkMode" 
-                      checked={theme === 'dark'} 
-                      onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} 
-                    />
-                  </div>
-                </div>
-
-                <Separator className="my-4 bg-slate-700" />
-
-                <div className="space-y-4">
                   <h3 className="text-lg font-medium text-white">Cores dos balões de chat</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -183,32 +261,61 @@ const Settings = () => {
                   <h3 className="text-lg font-medium text-white">Perfil</h3>
                   <div className="space-y-2">
                     <Label htmlFor="username" className="text-white">Nome de usuário</Label>
-                    <Input id="username" placeholder="Seu nome" className="bg-slate-700 text-white" />
+                    <Input 
+                      id="username" 
+                      value={userData.nome} 
+                      readOnly 
+                      className="bg-slate-700 text-white opacity-80" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-white">Email</Label>
-                    <Input id="email" type="email" placeholder="seu@email.com" className="bg-slate-700 text-white" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={userData.email} 
+                      readOnly 
+                      className="bg-slate-700 text-white opacity-80" 
+                    />
                   </div>
                 </div>
 
                 <Separator className="my-4 bg-slate-700" />
 
-                <div className="space-y-3">
+                <form onSubmit={handlePasswordChange} className="space-y-3">
                   <h3 className="text-lg font-medium text-white">Senha</h3>
                   <div className="space-y-2">
                     <Label htmlFor="currentPassword" className="text-white">Senha atual</Label>
-                    <Input id="currentPassword" type="password" className="bg-slate-700 text-white" />
+                    <Input 
+                      id="currentPassword" 
+                      type="password" 
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="bg-slate-700 text-white" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="newPassword" className="text-white">Nova senha</Label>
-                    <Input id="newPassword" type="password" className="bg-slate-700 text-white" />
+                    <Input 
+                      id="newPassword" 
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="bg-slate-700 text-white" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="text-white">Confirmar senha</Label>
-                    <Input id="confirmPassword" type="password" className="bg-slate-700 text-white" />
+                    <Input 
+                      id="confirmPassword" 
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="bg-slate-700 text-white" 
+                    />
                   </div>
-                  <Button className="mt-2">Alterar senha</Button>
-                </div>
+                  <Button type="submit" className="mt-2">Alterar senha</Button>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
@@ -222,17 +329,28 @@ const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="emailNotifications" className="text-white">Notificações por email</Label>
+                    <div>
+                      <Label htmlFor="emailNotifications" className="text-white block mb-1">Notificações por email</Label>
+                      <p className="text-sm text-slate-400">Receba atualizações importantes por email</p>
+                    </div>
                     <Switch id="emailNotifications" />
                   </div>
+                  
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="pushNotifications" className="text-white">Notificações push</Label>
+                    <div>
+                      <Label htmlFor="pushNotifications" className="text-white block mb-1">Notificações push</Label>
+                      <p className="text-sm text-slate-400">Receba alertas em tempo real diretamente no navegador</p>
+                    </div>
                     <Switch id="pushNotifications" />
                   </div>
+                  
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="soundAlerts" className="text-white">Alertas sonoros</Label>
+                    <div>
+                      <Label htmlFor="soundAlerts" className="text-white block mb-1">Alertas sonoros</Label>
+                      <p className="text-sm text-slate-400">Reproduza sons ao receber novas mensagens</p>
+                    </div>
                     <Switch id="soundAlerts" />
                   </div>
                 </div>

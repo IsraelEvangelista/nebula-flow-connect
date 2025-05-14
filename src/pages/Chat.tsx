@@ -4,7 +4,7 @@ import { ChatHeader } from '@/components/ChatHeader';
 import { MessageBubble } from '@/components/MessageBubble';
 import MessageInput from '@/components/MessageInput';
 import { useChat } from '@/context/ChatContext';
-import { BackgroundContext, BackgroundType } from '@/context/BackgroundContext';
+import { BackgroundContext } from '@/context/BackgroundContext';
 import DeepSpaceBackground from '@/components/backgrounds/DeepSpaceBackground';
 import NebulaBackground from '@/components/backgrounds/NebulaBackground';
 import SunlitSpaceBackground from '@/components/backgrounds/SunlitSpaceBackground';
@@ -12,7 +12,7 @@ import CustomBackground from '@/components/backgrounds/CustomBackground';
 
 const Chat: React.FC = () => {
   const { messages, isLoading } = useChat();
-  const { background, customBackground } = useContext(BackgroundContext);
+  const { background, customBackgroundUrl } = useContext(BackgroundContext);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom whenever messages change
@@ -27,7 +27,7 @@ const Chat: React.FC = () => {
       case 'sunlit':
         return <SunlitSpaceBackground />;
       case 'custom':
-        return customBackground ? <CustomBackground imageUrl={customBackground} /> : <NebulaBackground starCount={150} />;
+        return customBackgroundUrl ? <CustomBackground imageUrl={customBackgroundUrl} /> : <NebulaBackground starCount={150} />;
       case 'deepSpace':
       default:
         return <DeepSpaceBackground starCount={150} />;
@@ -50,10 +50,7 @@ const Chat: React.FC = () => {
             messages.map((message) => (
               <MessageBubble
                 key={message.id}
-                content={message.content}
-                sender={message.sender}
-                timestamp={message.timestamp}
-                attachments={message.attachments}
+                message={message}
               />
             ))
           )}

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { useGreeting } from "@/hooks/useGreeting";
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ChatHeader = () => {
   const navigate = useNavigate();
@@ -11,10 +12,11 @@ export const ChatHeader = () => {
   const [greetingText, setGreetingText] = useState("");
   const [animationPhase, setAnimationPhase] = useState("typing"); // typing, complete, moving
   const [scrollPosition, setScrollPosition] = useState(0);
+  const isMobile = useIsMobile();
   
   const fullText = `${greeting}`;
-  const containerWidth = 300; // Fixed width for text container
-
+  const containerWidth = isMobile ? 200 : 300; // Reduced width on mobile
+  
   // Typing animation effect
   useEffect(() => {
     if (animationPhase === "typing" && greetingText.length < fullText.length) {
@@ -31,21 +33,21 @@ export const ChatHeader = () => {
       
       return () => clearTimeout(timer);
     } else if (animationPhase === "moving") {
-      // Text scrolling animation
+      // Text scrolling animation - right to left
       const textWidth = fullText.length * 10; // Approximate text width
       
-      if (scrollPosition <= -(textWidth)) {
-        // Reset position and start again
+      if (scrollPosition <= -(textWidth + containerWidth)) {
+        // Reset position to start from right again
         setScrollPosition(containerWidth);
       } else {
         const timer = setTimeout(() => {
           setScrollPosition(prev => prev - 1);
-        }, 30);
+        }, 50); // Slower animation speed
         
         return () => clearTimeout(timer);
       }
     }
-  }, [greetingText, fullText, animationPhase, scrollPosition]);
+  }, [greetingText, fullText, animationPhase, scrollPosition, containerWidth]);
 
   // Reset the animation when the greeting changes
   useEffect(() => {
@@ -62,11 +64,11 @@ export const ChatHeader = () => {
           onClick={() => navigate("/tools")}
         >
           <img 
-            src="/nebula-logo.png" 
+            src="/lovable-uploads/af36109a-107a-4fb7-8951-8e005cb8fa45.png" 
             alt="Nebula" 
             className="h-8 w-auto"
             onError={(e) => {
-              // Fallback if image doesn't exist
+              // Fallback in case image doesn't load
               e.currentTarget.style.display = 'none';
               const fallback = document.createElement('div');
               fallback.textContent = 'NEBULA';
@@ -78,7 +80,7 @@ export const ChatHeader = () => {
         
         <div className="overflow-hidden" style={{ width: `${containerWidth}px` }}>
           <h1 
-            className="text-md md:text-lg font-semibold text-white whitespace-nowrap"
+            className={`${isMobile ? 'text-sm' : 'text-md md:text-lg'} font-semibold text-white whitespace-nowrap`}
             style={{ 
               transform: animationPhase === "moving" ? `translateX(${scrollPosition}px)` : 'none'
             }}
@@ -90,8 +92,8 @@ export const ChatHeader = () => {
       </div>
       
       <div className="flex gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/settings")}>
-          <Settings className="h-5 w-5 text-white" />
+        <Button variant="ghost" size={isMobile ? "sm" : "icon"} onClick={() => navigate("/settings")}>
+          <Settings className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
         </Button>
       </div>
     </div>

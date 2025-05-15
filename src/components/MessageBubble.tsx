@@ -1,9 +1,8 @@
-
 import { Attachment } from '@/context/ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useContext } from 'react';
 import { BackgroundContext } from '@/context/BackgroundContext';
-import { FileIcon, ImageIcon, FileText, File, FilePdf, FileCode, FileAudio, FileVideo, FileX } from 'lucide-react';
+import { FileIcon, ImageIcon, FileText, File, FileCode, FileX, FileAudio, FileVideo } from 'lucide-react';
 
 export interface MessageBubbleProps {
   content: string;
@@ -28,7 +27,7 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
   // Function to get the appropriate icon based on file type
   const getDocumentIcon = (mimeType: string) => {
     if (mimeType.includes('pdf')) {
-      return <FilePdf className="h-8 w-8 text-red-500" />;
+      return <FileText className="h-8 w-8 text-red-500" />;
     } else if (mimeType.includes('text') || mimeType.includes('doc') || mimeType.includes('rtf')) {
       return <FileText className="h-8 w-8 text-blue-400" />;
     } else if (mimeType.includes('audio')) {

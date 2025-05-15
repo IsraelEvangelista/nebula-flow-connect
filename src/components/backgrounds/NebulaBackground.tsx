@@ -43,6 +43,7 @@ const NebulaBackground: React.FC<NebulaBackgroundProps> = ({ starCount = 150 }) 
       star.style.top = `${y}px`;
       star.style.opacity = `${brightness}`;
       star.style.animationDelay = `${delay}s`;
+      star.style.animationIterationCount = 'infinite'; // Ensure infinite animation
       
       // Create a small subset of extra bright stars
       if (Math.random() < 0.1) {
@@ -56,6 +57,53 @@ const NebulaBackground: React.FC<NebulaBackgroundProps> = ({ starCount = 150 }) 
       // Add star to container
       container.appendChild(star);
     }
+
+    // Handle window resize
+    const handleResize = () => {
+      if (container) {
+        // Remove existing stars
+        container.querySelectorAll('.star').forEach(star => star.remove());
+        
+        // Get new container dimensions
+        const newWidth = container.clientWidth;
+        const newHeight = container.clientHeight;
+        
+        // Recreate stars with new dimensions
+        for (let i = 0; i < starCount; i++) {
+          const star = document.createElement('div');
+          star.classList.add('star');
+          
+          const x = Math.random() * newWidth;
+          const y = Math.random() * newHeight;
+          const size = Math.random() * 2.5 + 0.5;
+          const brightness = Math.random() * 0.5 + 0.5;
+          const delay = Math.random() * 5;
+          
+          star.style.width = `${size}px`;
+          star.style.height = `${size}px`;
+          star.style.left = `${x}px`;
+          star.style.top = `${y}px`;
+          star.style.opacity = `${brightness}`;
+          star.style.animationDelay = `${delay}s`;
+          star.style.animationIterationCount = 'infinite'; // Ensure infinite animation
+          
+          if (Math.random() < 0.1) {
+            star.style.boxShadow = `0 0 ${Math.random() * 3 + 2}px rgba(255, 255, 255, 0.8)`;
+          }
+          
+          const animationIndex = Math.floor(Math.random() * 3) + 1;
+          star.classList.add(`twinkle-${animationIndex}`);
+          
+          container.appendChild(star);
+        }
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, [starCount]);
 
   return (

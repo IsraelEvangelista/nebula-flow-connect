@@ -48,9 +48,11 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
         className={`message-bubble ${isUser ? 'user-message ml-12' : 'assistant-message mr-12'} backdrop-blur-sm text-white rounded-2xl p-3 max-w-[80%]`}
         style={bubbleStyle}
       >
-        <div className="p-1">
-          <MarkdownRenderer content={content} />
-        </div>
+        {content && (
+          <div className="p-1">
+            <MarkdownRenderer content={content} />
+          </div>
+        )}
         
         {attachments && attachments.length > 0 && (
           <div className="mt-2 space-y-2">
@@ -61,22 +63,23 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
                     <img 
                       src={`data:${attachment.mimeType};base64,${attachment.data}`}
                       alt={attachment.name} 
-                      className="max-w-full max-h-[200px] rounded-lg object-contain"
+                      className="max-w-full max-h-[150px] rounded-lg object-contain" // Reduced max height
                     />
-                    <span className="text-xs text-gray-300 mt-1 truncate max-w-full">
-                      {attachment.name}
-                    </span>
                   </div>
                 )}
                 {attachment.type === 'audio' && (
                   <div className="flex flex-col">
-                    <audio controls className="w-full">
+                    <audio 
+                      controls 
+                      className="w-full max-w-[240px] h-10 rounded-full focus:outline-none"
+                      style={{
+                        backgroundColor: 'rgba(0,0,0,0.2)',
+                        borderRadius: '20px'
+                      }}
+                    >
                       <source src={`data:${attachment.mimeType};base64,${attachment.data}`} type={attachment.mimeType} />
                       Your browser does not support the audio element.
                     </audio>
-                    <span className="text-xs text-gray-300 mt-1 truncate max-w-full">
-                      {attachment.name}
-                    </span>
                   </div>
                 )}
                 {attachment.type === 'document' && (

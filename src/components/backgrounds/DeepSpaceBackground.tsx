@@ -39,6 +39,7 @@ const DeepSpaceBackground: React.FC<DeepSpaceBackgroundProps> = ({ starCount = 1
       star.style.left = `${x}px`;
       star.style.top = `${y}px`;
       star.style.animationDelay = `${delay}s`;
+      star.style.animationIterationCount = 'infinite'; // Ensure infinite animation
       
       // Add animation
       const animationIndex = Math.floor(Math.random() * 3) + 1;
@@ -47,6 +48,47 @@ const DeepSpaceBackground: React.FC<DeepSpaceBackgroundProps> = ({ starCount = 1
       // Add star to container
       container.appendChild(star);
     }
+    
+    // Handle window resize to ensure stars are recreated
+    const handleResize = () => {
+      if (container) {
+        // Remove existing stars
+        container.querySelectorAll('.star').forEach(star => star.remove());
+        
+        // Get new container dimensions
+        const newWidth = container.clientWidth;
+        const newHeight = container.clientHeight;
+        
+        // Recreate stars with new dimensions
+        for (let i = 0; i < starCount; i++) {
+          const star = document.createElement('div');
+          star.classList.add('star');
+          
+          const x = Math.random() * newWidth;
+          const y = Math.random() * newHeight;
+          const size = Math.random() * 1.5 + 0.5;
+          const delay = Math.random() * 4;
+          
+          star.style.width = `${size}px`;
+          star.style.height = `${size}px`;
+          star.style.left = `${x}px`;
+          star.style.top = `${y}px`;
+          star.style.animationDelay = `${delay}s`;
+          star.style.animationIterationCount = 'infinite'; // Ensure infinite animation
+          
+          const animationIndex = Math.floor(Math.random() * 3) + 1;
+          star.classList.add(`twinkle-${animationIndex}`);
+          
+          container.appendChild(star);
+        }
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, [starCount]);
 
   return (

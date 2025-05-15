@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, ChangeEvent } from 'react';
 import { useChat, type Attachment } from '@/context/ChatContext';
-import { Send, Mic, MicOff, Image, File } from 'lucide-react';
+import { Send, Mic, MicOff, Image, File, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ const MessageInput: React.FC = () => {
   const [recordingDuration, setRecordingDuration] = useState<number>(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -67,11 +68,10 @@ const MessageInput: React.FC = () => {
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
-  
-  // Toggle voice recording
-  const toggleRecording = async () => {
-    if (isRecording && mediaRecorder) {
-      // Stop recording
+
+  // Stop recording function
+  const stopRecording = () => {
+    if (mediaRecorder) {
       mediaRecorder.stop();
       setIsRecording(false);
       setRecordingStartTime(null);
@@ -80,13 +80,46 @@ const MessageInput: React.FC = () => {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+    }
+  };
+
+  // Cancel recording function
+  const cancelRecording = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setRecordingStartTime(null);
+      setAudioChunks([]);
       
-      // We'll finalize the audio in the mediaRecorder.onstop event handler
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      // Stop all audio tracks
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      toast({
+        title: "Gravação cancelada",
+        description: "A gravação de áudio foi cancelada",
+      });
+    }
+  };
+  
+  // Toggle voice recording
+  const toggleRecording = async () => {
+    if (isRecording && mediaRecorder) {
+      // Stop recording and send audio
+      stopRecording();
+      // Audio will be processed in the mediaRecorder.onstop event handler
     } else {
       // Start recording
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setStream(audioStream);
+        const recorder = new MediaRecorder(audioStream);
         setMediaRecorder(recorder);
         
         const chunks: Blob[] = [];
@@ -99,36 +132,37 @@ const MessageInput: React.FC = () => {
         };
         
         recorder.onstop = () => {
-          // Create audio blob
-          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-          
-          // Convert to base64
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (reader.result) {
-              const base64data = (reader.result as string).split(',')[1];
-              
-              // Add as attachment
-              const newAttachment: Attachment = {
-                type: 'audio',
-                data: base64data,
-                name: `Audio_${new Date().toISOString().replace(/[:.]/g, '-')}.webm`,
-                mimeType: 'audio/webm'
-              };
-              
-              setAttachments(prev => [...prev, newAttachment]);
-              
-              toast({
-                title: "Áudio gravado",
-                description: "Áudio adicionado à mensagem",
-              });
-            }
-          };
-          
-          reader.readAsDataURL(audioBlob);
+          // Only process audio if there are chunks and not cancelled
+          if (chunks.length > 0) {
+            // Create audio blob
+            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+            
+            // Convert to base64
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (reader.result) {
+                const base64data = (reader.result as string).split(',')[1];
+                
+                // Add as attachment
+                const newAttachment: Attachment = {
+                  type: 'audio',
+                  data: base64data,
+                  name: `Audio_${new Date().toISOString().replace(/[:.]/g, '-')}.webm`,
+                  mimeType: 'audio/webm'
+                };
+                
+                // Send message immediately with just the audio
+                sendMessage("", [newAttachment]);
+              }
+            };
+            
+            reader.readAsDataURL(audioBlob);
+          }
           
           // Stop all audio tracks
-          stream.getTracks().forEach(track => track.stop());
+          if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+          }
         };
         
         // Start recording
@@ -137,11 +171,6 @@ const MessageInput: React.FC = () => {
         setRecordingStartTime(Date.now());
         setRecordingDuration(0);
         updateRecordingTimer();
-        
-        toast({
-          title: "Gravando áudio",
-          description: "Clique no botão novamente para parar",
-        });
       } catch (err) {
         console.error("Error accessing microphone:", err);
         toast({
@@ -240,78 +269,98 @@ const MessageInput: React.FC = () => {
             onKeyDown={handleKeyDown}
             placeholder="Digite sua mensagem..."
             className="bg-transparent text-white border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[40px] max-h-[120px] placeholder:text-white/50"
-            disabled={isLoading}
+            disabled={isLoading || isRecording}
             rows={1}
           />
         </div>
         
         {/* Action buttons */}
         <div className="flex items-center gap-1">
-          {/* Image upload button */}
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={isLoading}
-          >
-            <Image size={18} />
-          </Button>
-          
-          {/* Hidden image input */}
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, 'image')}
-            className="hidden"
-          />
-          
-          {/* File upload button */}
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isLoading}
-          >
-            <File size={18} />
-          </Button>
-          
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            onChange={(e) => handleFileChange(e, 'document')}
-            className="hidden"
-          />
+          {!isRecording && (
+            <>
+              {/* Image upload button */}
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                <Image size={18} />
+              </Button>
+              
+              {/* Hidden image input */}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(e, 'image')}
+                className="hidden"
+              />
+              
+              {/* File upload button */}
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                <File size={18} />
+              </Button>
+              
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={(e) => handleFileChange(e, 'document')}
+                className="hidden"
+              />
+            </>
+          )}
           
           {/* Voice recording button */}
           <Button
             type="button"
             size="icon"
-            variant="ghost"
             className={`${
               isRecording 
-                ? 'text-red-500 hover:text-red-600' 
-                : 'text-white/70 hover:text-white'
-            } hover:bg-nebula-blue/20 h-9 w-9`}
+                ? 'bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:from-nebula-purple/90 hover:to-nebula-blue/90 rounded-full'
+                : 'text-white/70 hover:text-white hover:bg-nebula-blue/20'
+            } h-9 w-9`}
             onClick={toggleRecording}
             disabled={isLoading}
           >
-            {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+            {isRecording ? <MicOff size={16} /> : <Mic size={18} />}
           </Button>
+          
+          {/* Cancel recording button - only visible during recording */}
+          {isRecording && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="text-red-500 hover:text-red-600 hover:bg-red-500/10 h-9 w-9"
+              onClick={cancelRecording}
+            >
+              <X size={18} />
+            </Button>
+          )}
           
           {/* Send button */}
           <Button
             type="submit"
             size="icon"
-            className={`bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:from-nebula-purple/90 hover:to-nebula-blue/90 h-9 w-9 rounded-full ${
-              (!message.trim() && attachments.length === 0) ? 'opacity-50' : ''
+            className={`${
+              isRecording 
+                ? 'bg-nebula-gray/50 text-white/50'
+                : 'bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:from-nebula-purple/90 hover:to-nebula-blue/90'
+            } h-9 w-9 rounded-full ${
+              (!message.trim() && attachments.length === 0) || isRecording ? 'opacity-50' : ''
             }`}
-            disabled={isLoading || (!message.trim() && attachments.length === 0)}
+            disabled={isLoading || isRecording || (!message.trim() && attachments.length === 0)}
           >
             <Send size={16} />
           </Button>

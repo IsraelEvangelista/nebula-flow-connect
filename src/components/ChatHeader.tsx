@@ -57,7 +57,7 @@ export const ChatHeader = () => {
   }, [greeting]);
 
   return (
-    <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-700 w-full">
+    <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-700 w-full z-20 relative">
       <div className="flex items-center">
         <div 
           className="cursor-pointer mr-4" 

@@ -36,15 +36,16 @@ const Chat: React.FC = () => {
   
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Fixed background that doesn't scroll */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        {renderBackground()}
+      </div>
+      
+      {/* Header with higher z-index */}
       <ChatHeader />
       
-      <main className="flex-1 overflow-y-auto p-4 relative">
-        {/* Fixed background that doesn't scroll */}
-        <div className="fixed inset-0 z-0 overflow-hidden">
-          {renderBackground()}
-        </div>
-        
-        <div className="relative z-10 space-y-4">
+      <main className="flex-1 overflow-y-auto p-4 relative z-10">
+        <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-white/50">
               <p>Envie uma mensagem para começar a conversa.</p>

@@ -101,6 +101,25 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       // Add user message to state
       setMessages(prevMessages => [...prevMessages, userMessage]);
 
+      // Get user profile to get the name
+      let username = user?.email?.split('@')[0] || null;
+      
+      if (user?.id) {
+        try {
+          const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('nome')
+            .eq('id', user.id)
+            .single();
+            
+          if (!userError && userData) {
+            username = userData.nome || username;
+          }
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+        }
+      }
+      
       // Prepare data for webhook
       const webhookData = {
         message: content,
@@ -115,7 +134,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         session: {
           userId: user?.id || null,
           userEmail: user?.email || null,
-          username: user?.user_metadata?.username || user?.user_metadata?.name || user?.email?.split('@')[0] || null,
+          username: username,
           sessionId: session?.access_token?.substring(0, 8) || null,
           timestamp: new Date().toISOString()
         }

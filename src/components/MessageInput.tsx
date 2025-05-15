@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, ChangeEvent } from 'react';
 import { useChat, type Attachment } from '@/context/ChatContext';
-import { Send, Mic, MicOff, Image, File, X } from 'lucide-react';
+import { Send, Mic, MicOff, Image, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -10,9 +10,15 @@ const MessageInput: React.FC = () => {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState<number>(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const timerRef = useRef<number | null>(null);
   const { sendMessage, isLoading } = useChat();
   const { toast } = useToast();
   
@@ -46,22 +52,104 @@ const MessageInput: React.FC = () => {
     }
   };
   
+  // Update recording timer
+  const updateRecordingTimer = () => {
+    if (recordingStartTime !== null) {
+      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+      setRecordingDuration(elapsed);
+      timerRef.current = window.setTimeout(updateRecordingTimer, 1000);
+    }
+  };
+  
+  // Format recording time as mm:ss
+  const formatRecordingTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+  
   // Toggle voice recording
-  const toggleRecording = () => {
-    if (isRecording) {
-      // Stop recording logic will go here
+  const toggleRecording = async () => {
+    if (isRecording && mediaRecorder) {
+      // Stop recording
+      mediaRecorder.stop();
       setIsRecording(false);
-      toast({
-        title: "Gravação finalizada",
-        description: "Implementação completa de áudio em breve.",
-      });
+      setRecordingStartTime(null);
+      
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // We'll finalize the audio in the mediaRecorder.onstop event handler
     } else {
-      // Start recording logic will go here
-      setIsRecording(true);
-      toast({
-        title: "Gravando áudio",
-        description: "Implementação completa de áudio em breve.",
-      });
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        setMediaRecorder(recorder);
+        
+        const chunks: Blob[] = [];
+        setAudioChunks(chunks);
+        
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+          }
+        };
+        
+        recorder.onstop = () => {
+          // Create audio blob
+          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+          
+          // Convert to base64
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (reader.result) {
+              const base64data = (reader.result as string).split(',')[1];
+              
+              // Add as attachment
+              const newAttachment: Attachment = {
+                type: 'audio',
+                data: base64data,
+                name: `Audio_${new Date().toISOString().replace(/[:.]/g, '-')}.webm`,
+                mimeType: 'audio/webm'
+              };
+              
+              setAttachments(prev => [...prev, newAttachment]);
+              
+              toast({
+                title: "Áudio gravado",
+                description: "Áudio adicionado à mensagem",
+              });
+            }
+          };
+          
+          reader.readAsDataURL(audioBlob);
+          
+          // Stop all audio tracks
+          stream.getTracks().forEach(track => track.stop());
+        };
+        
+        // Start recording
+        recorder.start();
+        setIsRecording(true);
+        setRecordingStartTime(Date.now());
+        setRecordingDuration(0);
+        updateRecordingTimer();
+        
+        toast({
+          title: "Gravando áudio",
+          description: "Clique no botão novamente para parar",
+        });
+      } catch (err) {
+        console.error("Error accessing microphone:", err);
+        toast({
+          title: "Erro ao acessar microfone",
+          description: "Verifique as permissões do navegador",
+          variant: "destructive",
+        });
+      }
     }
   };
   
@@ -116,7 +204,8 @@ const MessageInput: React.FC = () => {
               key={index} 
               className="bg-nebula-gray/50 backdrop-blur-md rounded-lg p-2 text-xs text-white flex items-center"
             >
-              {attachment.type === 'image' ? '🖼️' : '📄'} {attachment.name.length > 15 
+              {attachment.type === 'image' ? '🖼️' : attachment.type === 'audio' ? '🎤' : '📄'} 
+              {attachment.name.length > 15 
                 ? `${attachment.name.substring(0, 12)}...` 
                 : attachment.name}
               <button 
@@ -124,10 +213,20 @@ const MessageInput: React.FC = () => {
                 className="ml-2 text-white/70 hover:text-white"
                 onClick={() => removeAttachment(index)}
               >
-                <X size={14} />
+                ×
               </button>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Recording indicator */}
+      {isRecording && (
+        <div className="flex items-center justify-center mb-2 p-2 bg-red-500/20 rounded-md">
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse mr-2"></div>
+          <span className="text-sm text-white">
+            Gravando: {formatRecordingTime(recordingDuration)}
+          </span>
         </div>
       )}
       

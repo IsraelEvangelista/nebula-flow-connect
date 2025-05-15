@@ -1,3 +1,4 @@
+
 import { Attachment } from '@/context/ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useContext } from 'react';
@@ -60,7 +61,7 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
                     <img 
                       src={`data:${attachment.mimeType};base64,${attachment.data}`}
                       alt={attachment.name} 
-                      className="max-w-full max-h-[300px] rounded-lg object-contain"
+                      className="max-w-full max-h-[200px] rounded-lg object-contain"
                     />
                     <span className="text-xs text-gray-300 mt-1 truncate max-w-full">
                       {attachment.name}

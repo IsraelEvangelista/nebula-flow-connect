@@ -115,6 +115,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         session: {
           userId: user?.id || null,
           userEmail: user?.email || null,
+          username: user?.user_metadata?.username || user?.user_metadata?.name || user?.email?.split('@')[0] || null,
           sessionId: session?.access_token?.substring(0, 8) || null,
           timestamp: new Date().toISOString()
         }

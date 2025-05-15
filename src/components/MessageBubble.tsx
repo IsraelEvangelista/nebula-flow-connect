@@ -3,6 +3,7 @@ import { Attachment } from '@/context/ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useContext } from 'react';
 import { BackgroundContext } from '@/context/BackgroundContext';
+import { FileIcon, ImageIcon, FileText, File, FilePdf, FileCode, FileAudio, FileVideo, FileX } from 'lucide-react';
 
 export interface MessageBubbleProps {
   content: string;
@@ -24,6 +25,23 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
     backgroundColor: isUser ? userBubbleColor : assistantBubbleColor,
   };
 
+  // Function to get the appropriate icon based on file type
+  const getDocumentIcon = (mimeType: string) => {
+    if (mimeType.includes('pdf')) {
+      return <FilePdf className="h-8 w-8 text-red-500" />;
+    } else if (mimeType.includes('text') || mimeType.includes('doc') || mimeType.includes('rtf')) {
+      return <FileText className="h-8 w-8 text-blue-400" />;
+    } else if (mimeType.includes('audio')) {
+      return <FileAudio className="h-8 w-8 text-green-500" />;
+    } else if (mimeType.includes('video')) {
+      return <FileVideo className="h-8 w-8 text-purple-500" />;
+    } else if (mimeType.includes('code') || mimeType.includes('json') || mimeType.includes('xml') || mimeType.includes('html')) {
+      return <FileCode className="h-8 w-8 text-yellow-500" />;
+    } else {
+      return <File className="h-8 w-8 text-gray-400" />;
+    }
+  };
+
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} w-full mb-4`}>
       <div 
@@ -39,27 +57,42 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
             {attachments.map((attachment, index) => (
               <div key={index} className="attachment">
                 {attachment.type === 'image' && (
-                  <img 
-                    src={attachment.data} 
-                    alt={attachment.name} 
-                    className="max-w-full rounded-lg"
-                  />
+                  <div className="flex flex-col items-center">
+                    <img 
+                      src={`data:${attachment.mimeType};base64,${attachment.data}`}
+                      alt={attachment.name} 
+                      className="max-w-full max-h-[300px] rounded-lg object-contain"
+                    />
+                    <span className="text-xs text-gray-300 mt-1 truncate max-w-full">
+                      {attachment.name}
+                    </span>
+                  </div>
                 )}
                 {attachment.type === 'audio' && (
-                  <audio controls className="w-full">
-                    <source src={attachment.data} type={attachment.mimeType} />
-                    Your browser does not support the audio element.
-                  </audio>
+                  <div className="flex flex-col">
+                    <audio controls className="w-full">
+                      <source src={`data:${attachment.mimeType};base64,${attachment.data}`} type={attachment.mimeType} />
+                      Your browser does not support the audio element.
+                    </audio>
+                    <span className="text-xs text-gray-300 mt-1 truncate max-w-full">
+                      {attachment.name}
+                    </span>
+                  </div>
                 )}
                 {attachment.type === 'document' && (
-                  <div className="flex items-center p-2 bg-slate-800 rounded-lg">
-                    <div className="p-2 bg-slate-700 rounded mr-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                      </svg>
+                  <div className="flex flex-col items-center p-3 bg-slate-800/40 rounded-lg">
+                    <div className="flex flex-col items-center">
+                      {getDocumentIcon(attachment.mimeType)}
+                      <span className="text-xs text-gray-300 mt-2 text-center truncate max-w-full">
+                        {attachment.name}
+                      </span>
                     </div>
-                    <a href={attachment.data} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                      {attachment.name}
+                    <a 
+                      href={`data:${attachment.mimeType};base64,${attachment.data}`} 
+                      download={attachment.name}
+                      className="mt-2 text-xs text-blue-400 hover:underline"
+                    >
+                      Download
                     </a>
                   </div>
                 )}

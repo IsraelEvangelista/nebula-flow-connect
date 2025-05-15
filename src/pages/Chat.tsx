@@ -39,7 +39,10 @@ const Chat: React.FC = () => {
       <ChatHeader />
       
       <main className="flex-1 overflow-y-auto p-4 relative">
-        {renderBackground()}
+        {/* Fixed background that doesn't scroll */}
+        <div className="fixed inset-0 z-0 overflow-hidden">
+          {renderBackground()}
+        </div>
         
         <div className="relative z-10 space-y-4">
           {messages.length === 0 ? (

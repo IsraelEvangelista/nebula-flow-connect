@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Youtube as YoutubeIcon, Plus, Trash2, ExternalLink, Search } from 'lucide-react';
+import { ChevronLeft, Youtube as YoutubeIcon, Plus, Trash2, ExternalLink, Search, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,13 @@ interface VideoItem {
   thumbnail: string;
   description: string;
   tags: string[];
+  categoryId?: string; // ID da categoria
+}
+
+interface Category {
+  id: string;
+  name: string;
+  color?: string; // Para personalizar cores das categorias
 }
 
 // Função para extratar o ID do YouTube da URL
@@ -33,25 +40,40 @@ const extractYoutubeId = (url: string): string | null => {
   return (match && match[7].length === 11) ? match[7] : null;
 };
 
+// Cores para categorias
+const categoryColors = [
+  "bg-red-500", "bg-blue-500", "bg-green-500", 
+  "bg-yellow-500", "bg-purple-500", "bg-pink-500",
+  "bg-indigo-500", "bg-orange-500", "bg-teal-500"
+];
+
 const YoutubePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [isAddingVideo, setIsAddingVideo] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   
   // Estado para novo vídeo
   const [newVideo, setNewVideo] = useState({
     url: '',
     title: '',
     description: '',
-    tags: ''
+    tags: '',
+    categoryId: ''
   });
   
-  // Carregar vídeos do localStorage
+  // Carregar vídeos e categorias do localStorage
   useEffect(() => {
     const savedVideos = localStorage.getItem('youtubeVideos');
+    const savedCategories = localStorage.getItem('youtubeCategories');
+    
     if (savedVideos) {
       try {
         setVideos(JSON.parse(savedVideos));
@@ -82,14 +104,74 @@ const YoutubePage = () => {
       setVideos(exampleVideos);
       localStorage.setItem('youtubeVideos', JSON.stringify(exampleVideos));
     }
+    
+    if (savedCategories) {
+      try {
+        setCategories(JSON.parse(savedCategories));
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+      }
+    } else {
+      // Categorias de exemplo
+      const exampleCategories: Category[] = [
+        { id: 'cat1', name: 'Música', color: 'bg-purple-500' },
+        { id: 'cat2', name: 'Tutoriais', color: 'bg-blue-500' }
+      ];
+      
+      setCategories(exampleCategories);
+      localStorage.setItem('youtubeCategories', JSON.stringify(exampleCategories));
+    }
   }, []);
   
-  // Salvar vídeos no localStorage quando mudam
+  // Salvar vídeos e categorias no localStorage quando mudam
   useEffect(() => {
     if (videos.length > 0) {
       localStorage.setItem('youtubeVideos', JSON.stringify(videos));
     }
-  }, [videos]);
+    
+    if (categories.length > 0) {
+      localStorage.setItem('youtubeCategories', JSON.stringify(categories));
+    }
+  }, [videos, categories]);
+  
+  // Função para adicionar nova categoria
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "Erro",
+        description: "O nome da categoria é obrigatório",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Verificar se a categoria já existe
+    if (categories.some(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase())) {
+      toast({
+        title: "Categoria duplicada",
+        description: "Esta categoria já existe",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Selecionar uma cor aleatória para a categoria
+    const randomColorIndex = Math.floor(Math.random() * categoryColors.length);
+    const newCategory: Category = {
+      id: `cat-${Date.now()}`,
+      name: newCategoryName,
+      color: categoryColors[randomColorIndex]
+    };
+    
+    setCategories([...categories, newCategory]);
+    setNewCategoryName('');
+    setIsAddingCategory(false);
+    
+    toast({
+      title: "Categoria adicionada",
+      description: `A categoria "${newCategoryName}" foi adicionada com sucesso`
+    });
+  };
   
   // Função para adicionar novo vídeo
   const handleAddVideo = async () => {
@@ -128,7 +210,8 @@ const YoutubePage = () => {
       title: newVideo.title || 'Vídeo do YouTube',
       thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`,
       description: newVideo.description || '',
-      tags: newVideo.tags ? newVideo.tags.split(',').map(tag => tag.trim().toLowerCase()) : []
+      tags: newVideo.tags ? newVideo.tags.split(',').map(tag => tag.trim().toLowerCase()) : [],
+      categoryId: newVideo.categoryId || undefined
     };
     
     setVideos([...videos, videoToAdd]);
@@ -139,7 +222,8 @@ const YoutubePage = () => {
       url: '',
       title: '',
       description: '',
-      tags: ''
+      tags: '',
+      categoryId: ''
     });
     
     toast({
@@ -150,6 +234,10 @@ const YoutubePage = () => {
   
   // Função para excluir vídeo
   const handleDeleteVideo = (id: string) => {
+    if (currentVideoId === id) {
+      setCurrentVideoId(null);
+    }
+    
     setVideos(videos.filter(video => video.id !== id));
     toast({
       title: "Vídeo removido",
@@ -157,7 +245,12 @@ const YoutubePage = () => {
     });
   };
   
-  // Filtrar vídeos por pesquisa e tag
+  // Função para reproduzir vídeo
+  const playVideo = (id: string) => {
+    setCurrentVideoId(id === currentVideoId ? null : id);
+  };
+  
+  // Filtrar vídeos por pesquisa, tag e categoria
   const filteredVideos = videos.filter(video => {
     const matchesSearch = 
       searchQuery === '' || 
@@ -166,9 +259,13 @@ const YoutubePage = () => {
     
     const matchesTab = 
       activeTab === 'all' || 
-      (video.tags.includes(activeTab));
+      video.tags.includes(activeTab);
     
-    return matchesSearch && matchesTab;
+    const matchesCategory =
+      !categoryFilter || 
+      video.categoryId === categoryFilter;
+    
+    return matchesSearch && matchesTab && matchesCategory;
   });
   
   // Extrair todas as tags únicas dos vídeos
@@ -194,99 +291,183 @@ const YoutubePage = () => {
             </h1>
           </div>
           
-          <Dialog open={isAddingVideo} onOpenChange={setIsAddingVideo}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                <Plus className="h-4 w-4 mr-1" /> Adicionar Vídeo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-slate-800 text-white border-slate-700">
-              <DialogHeader>
-                <DialogTitle>Adicionar Novo Vídeo</DialogTitle>
-                <DialogDescription className="text-slate-400">
-                  Cole a URL do YouTube e adicione informações sobre o vídeo.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="youtube-url" className="text-right text-sm">URL</label>
-                  <Input
-                    id="youtube-url"
-                    value={newVideo.url}
-                    onChange={(e) => setNewVideo({...newVideo, url: e.target.value})}
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    className="col-span-3 bg-slate-900/70 border-slate-600"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="title" className="text-right text-sm">Título</label>
-                  <Input
-                    id="title"
-                    value={newVideo.title}
-                    onChange={(e) => setNewVideo({...newVideo, title: e.target.value})}
-                    placeholder="Título do vídeo"
-                    className="col-span-3 bg-slate-900/70 border-slate-600"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="description" className="text-right text-sm">Descrição</label>
-                  <Input
-                    id="description"
-                    value={newVideo.description}
-                    onChange={(e) => setNewVideo({...newVideo, description: e.target.value})}
-                    placeholder="Breve descrição"
-                    className="col-span-3 bg-slate-900/70 border-slate-600"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="tags" className="text-right text-sm">Tags</label>
-                  <Input
-                    id="tags"
-                    value={newVideo.tags}
-                    onChange={(e) => setNewVideo({...newVideo, tags: e.target.value})}
-                    placeholder="música, tutorial, etc (separados por vírgula)"
-                    className="col-span-3 bg-slate-900/70 border-slate-600"
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsAddingVideo(false)}
-                  className="border-slate-600 text-slate-300"
-                >
-                  Cancelar
+          <div className="flex gap-2">
+            {/* Diálogo para nova categoria */}
+            <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="border-slate-600">
+                  <Plus className="h-4 w-4 mr-1" /> Categoria
                 </Button>
-                <Button 
-                  onClick={handleAddVideo}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Adicionar
+              </DialogTrigger>
+              <DialogContent className="bg-slate-800 text-white border-slate-700">
+                <DialogHeader>
+                  <DialogTitle>Nova Categoria</DialogTitle>
+                  <DialogDescription className="text-slate-400">
+                    Crie uma categoria para organizar seus vídeos.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="py-4">
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Nome da categoria"
+                    className="bg-slate-900/70 border-slate-600"
+                  />
+                </div>
+                
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsAddingCategory(false)}
+                    className="border-slate-600 text-slate-300"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleAddCategory}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Adicionar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Diálogo para novo vídeo */}
+            <Dialog open={isAddingVideo} onOpenChange={setIsAddingVideo}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                  <Plus className="h-4 w-4 mr-1" /> Vídeo
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-800 text-white border-slate-700">
+                <DialogHeader>
+                  <DialogTitle>Adicionar Novo Vídeo</DialogTitle>
+                  <DialogDescription className="text-slate-400">
+                    Cole a URL do YouTube e adicione informações sobre o vídeo.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="youtube-url" className="text-right text-sm">URL</label>
+                    <Input
+                      id="youtube-url"
+                      value={newVideo.url}
+                      onChange={(e) => setNewVideo({...newVideo, url: e.target.value})}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="col-span-3 bg-slate-900/70 border-slate-600"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="title" className="text-right text-sm">Título</label>
+                    <Input
+                      id="title"
+                      value={newVideo.title}
+                      onChange={(e) => setNewVideo({...newVideo, title: e.target.value})}
+                      placeholder="Título do vídeo"
+                      className="col-span-3 bg-slate-900/70 border-slate-600"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="description" className="text-right text-sm">Descrição</label>
+                    <Input
+                      id="description"
+                      value={newVideo.description}
+                      onChange={(e) => setNewVideo({...newVideo, description: e.target.value})}
+                      placeholder="Breve descrição"
+                      className="col-span-3 bg-slate-900/70 border-slate-600"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="tags" className="text-right text-sm">Tags</label>
+                    <Input
+                      id="tags"
+                      value={newVideo.tags}
+                      onChange={(e) => setNewVideo({...newVideo, tags: e.target.value})}
+                      placeholder="música, tutorial, etc (separados por vírgula)"
+                      className="col-span-3 bg-slate-900/70 border-slate-600"
+                    />
+                  </div>
+                  
+                  {categories.length > 0 && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <label className="text-right text-sm">Categoria</label>
+                      <div className="col-span-3">
+                        <select
+                          value={newVideo.categoryId}
+                          onChange={(e) => setNewVideo({...newVideo, categoryId: e.target.value})}
+                          className="w-full bg-slate-900/70 border-slate-600 rounded-md p-2 text-white"
+                        >
+                          <option value="">Sem categoria</option>
+                          {categories.map(category => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsAddingVideo(false)}
+                    className="border-slate-600 text-slate-300"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleAddVideo}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Adicionar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </header>
       
       {/* Search Bar and Filters */}
-      <div className="container mx-auto p-4 flex flex-col md:flex-row gap-4 items-center">
-        <div className="w-full md:w-1/2 relative">
-          <Search className="h-4 w-4 absolute left-3 top-3 text-slate-400" />
-          <Input
-            placeholder="Buscar vídeos..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-slate-800/40 border-slate-700 text-white"
-          />
+      <div className="container mx-auto p-4 flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="w-full md:w-1/2 relative">
+            <Search className="h-4 w-4 absolute left-3 top-3 text-slate-400" />
+            <Input
+              placeholder="Buscar vídeos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-slate-800/40 border-slate-700 text-white"
+            />
+          </div>
+          
+          {categories.length > 0 && (
+            <div className="w-full md:w-1/2">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full bg-slate-800/40 border-slate-700 rounded-md p-2 text-white"
+              >
+                <option value="">Todas as categorias</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-1/2">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-slate-800/40 border border-slate-700 w-full overflow-x-auto">
             <TabsTrigger value="all" className="data-[state=active]:bg-slate-700">
               Todos
@@ -319,31 +500,42 @@ const YoutubePage = () => {
             {filteredVideos.map(video => (
               <Card key={video.id} className="bg-slate-800/40 border-slate-700 overflow-hidden">
                 <div className="relative">
-                  <img 
-                    src={video.thumbnail} 
-                    alt={video.title} 
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      // Fallback se a thumbnail não carregar
-                      e.currentTarget.src = `https://img.youtube.com/vi/${video.id}/0.jpg`;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end">
-                    <a 
-                      href={video.url} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="m-3"
-                    >
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Assistir
-                      </Button>
-                    </a>
-                  </div>
+                  {/* Se o vídeo estiver sendo reproduzido, exibir o player do YouTube */}
+                  {currentVideoId === video.id ? (
+                    <div className="w-full aspect-video">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={`https://www.youtube.com/embed/${video.id}?autoplay=1`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  ) : (
+                    <div className="relative group">
+                      <img 
+                        src={video.thumbnail} 
+                        alt={video.title} 
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          // Fallback se a thumbnail não carregar
+                          e.currentTarget.src = `https://img.youtube.com/vi/${video.id}/0.jpg`;
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Button
+                          variant="default"
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 bg-red-600/80 hover:bg-red-600 transition-opacity rounded-full h-12 w-12"
+                          onClick={() => playVideo(video.id)}
+                        >
+                          <Play className="h-6 w-6 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <CardContent className="p-4">
@@ -352,11 +544,25 @@ const YoutubePage = () => {
                       <h3 className="font-semibold text-white line-clamp-2">{video.title}</h3>
                       <p className="text-sm text-slate-400 mt-1 line-clamp-2">{video.description}</p>
                       
+                      {/* Exibir categoria se existir */}
+                      {video.categoryId && (
+                        <div className="mt-2">
+                          {categories.filter(cat => cat.id === video.categoryId).map(cat => (
+                            <span
+                              key={cat.id}
+                              className={`text-xs text-white px-2 py-1 rounded-full mr-1 ${cat.color || 'bg-slate-700'}`}
+                            >
+                              {cat.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      
                       <div className="flex flex-wrap gap-1 mt-2">
                         {video.tags.map(tag => (
                           <span 
                             key={tag} 
-                            className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full"
+                            className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded-full cursor-pointer"
                             onClick={() => setActiveTab(tag)}
                           >
                             {tag}

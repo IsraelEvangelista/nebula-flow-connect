@@ -108,10 +108,24 @@ export const ChatHeader = () => {
           />
         </div>
         
+        <div className="overflow-hidden" style={{ width: `${containerWidth}px` }}>
+          <h1 
+            className={`${isMobile ? 'text-sm' : 'text-md md:text-lg'} font-semibold text-white whitespace-nowrap`}
+            style={{ 
+              transform: animationPhase === "moving" ? `translateX(${scrollPosition}px)` : 'none'
+            }}
+          >
+            {greetingText}
+            {animationPhase === "typing" && <span className="opacity-70 animate-pulse">|</span>}
+          </h1>
+        </div>
+      </div>
+      
+      <div className="flex gap-2">
         {/* Menu de ferramentas */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size={isMobile ? "sm" : "icon"} className="mr-2">
+            <Button variant="ghost" size={isMobile ? "sm" : "icon"}>
               <Wrench className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
             </Button>
           </PopoverTrigger>
@@ -134,20 +148,6 @@ export const ChatHeader = () => {
           </PopoverContent>
         </Popover>
         
-        <div className="overflow-hidden" style={{ width: `${containerWidth}px` }}>
-          <h1 
-            className={`${isMobile ? 'text-sm' : 'text-md md:text-lg'} font-semibold text-white whitespace-nowrap`}
-            style={{ 
-              transform: animationPhase === "moving" ? `translateX(${scrollPosition}px)` : 'none'
-            }}
-          >
-            {greetingText}
-            {animationPhase === "typing" && <span className="opacity-70 animate-pulse">|</span>}
-          </h1>
-        </div>
-      </div>
-      
-      <div className="flex gap-2">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size={isMobile ? "sm" : "icon"}>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, ChevronLeft, Clock, Globe, Bell, Plus, Trash2 } from 'lucide-react';
@@ -206,8 +205,8 @@ const CalendarPage = () => {
     });
   };
   
-  // Função para criar função de estilo de dia do calendário
-  const dayClassName = (date: Date) => {
+  // Função para criar classe CSS para dias do calendário
+  const getDayClassName = (date: Date) => {
     // Classes para estilo de dia
     let className = "";
     
@@ -277,10 +276,26 @@ const CalendarPage = () => {
                 selected={selectedDate}
                 onSelect={(date) => date && setSelectedDate(date)}
                 className="bg-slate-900/70 text-white border-slate-700 rounded-lg p-3 pointer-events-auto"
-                classNames={{
-                  day_selected: "bg-purple-600 text-white hover:bg-purple-600",
-                  day_today: "bg-slate-700 text-purple-300 font-bold",
-                  day: (date) => dayClassName(date)
+                modifiers={{
+                  weekend: (date) => isWeekend(date),
+                  hasEvents: (date) => events.some(
+                    event => 
+                      event.date.getDate() === date.getDate() &&
+                      event.date.getMonth() === date.getMonth() &&
+                      event.date.getFullYear() === date.getFullYear()
+                  ),
+                  isHoliday: (date) => events.some(
+                    event => 
+                      event.isHoliday &&
+                      event.date.getDate() === date.getDate() &&
+                      event.date.getMonth() === date.getMonth() &&
+                      event.date.getFullYear() === date.getFullYear()
+                  )
+                }}
+                modifiersClassNames={{
+                  weekend: "bg-blue-100/20 text-blue-200",
+                  hasEvents: "font-bold text-purple-300",
+                  isHoliday: "text-red-400 font-bold"
                 }}
               />
             </CardContent>

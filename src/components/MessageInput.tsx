@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, ChangeEvent } from 'react';
+import React, { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { useChat, type Attachment } from '@/context/ChatContext';
 import { Send, Mic, MicOff, Image, File, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,14 @@ const MessageInput: React.FC = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [maxRecordingReached, setMaxRecordingReached] = useState(false);
+  const MAX_RECORDING_TIME = 300; // 5 minutos em segundos
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const timerRef = useRef<number | null>(null);
+  const recordingTimeoutRef = useRef<number | null>(null);
   const { sendMessage, isLoading } = useChat();
   const { toast } = useToast();
   
@@ -58,7 +61,14 @@ const MessageInput: React.FC = () => {
     if (recordingStartTime !== null) {
       const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
       setRecordingDuration(elapsed);
-      timerRef.current = window.setTimeout(updateRecordingTimer, 1000);
+      
+      // Verificar se atingiu o tempo máximo
+      if (elapsed >= MAX_RECORDING_TIME) {
+        setMaxRecordingReached(true);
+        finishAndSendRecording();
+      } else {
+        timerRef.current = window.setTimeout(updateRecordingTimer, 1000);
+      }
     }
   };
   
@@ -69,21 +79,34 @@ const MessageInput: React.FC = () => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Stop recording function
-  const stopRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop();
-      setIsRecording(false);
-      setRecordingStartTime(null);
+  // Finaliza e envia a gravação
+  const finishAndSendRecording = () => {
+    if (mediaRecorder && recordingDuration > 0) {
+      // Primeiro interrompe o MediaRecorder
+      if (mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
       
+      // Limpa o timer
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+      
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+        recordingTimeoutRef.current = null;
+      }
+      
+      // Os dados do áudio serão processados no evento onstop do mediaRecorder
+      
+      // Atualiza os estados
+      setIsRecording(false);
+      setRecordingStartTime(null);
     }
   };
 
-  // Completo redesenho da função de cancelar gravação para garantir que não envie o áudio
+  // Cancelar gravação completamente
   const cancelRecording = () => {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       // Primeiro interrompe o MediaRecorder
@@ -93,11 +116,17 @@ const MessageInput: React.FC = () => {
       setIsRecording(false);
       setRecordingStartTime(null);
       setRecordingDuration(0);
+      setMaxRecordingReached(false);
       
       // Limpa o timer
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
+      }
+      
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+        recordingTimeoutRef.current = null;
       }
 
       // Limpa os chunks de áudio
@@ -121,12 +150,11 @@ const MessageInput: React.FC = () => {
     }
   };
   
-  // Toggle voice recording - Reescrito para garantir que a gravação funcione corretamente
+  // Toggle voice recording
   const toggleRecording = async () => {
     if (isRecording && mediaRecorder) {
-      // Envia o áudio gravado
-      stopRecording();
-      // O processamento do áudio ocorre no evento onstop do mediaRecorder
+      // Finaliza e envia o áudio gravado
+      finishAndSendRecording();
     } else {
       // Inicia a gravação
       try {
@@ -140,8 +168,9 @@ const MessageInput: React.FC = () => {
         
         setStream(audioStream);
         
-        // Cria um novo array para os chunks
+        // Armazena os chunks de áudio
         const chunks: Blob[] = [];
+        setAudioChunks(chunks);
         
         // Configura o MediaRecorder com melhor qualidade
         const options = { 
@@ -159,6 +188,7 @@ const MessageInput: React.FC = () => {
         recorder.ondataavailable = (e) => {
           if (e.data && e.data.size > 0) {
             chunks.push(e.data);
+            setAudioChunks(prev => [...prev, e.data]);
           }
         };
         
@@ -196,6 +226,7 @@ const MessageInput: React.FC = () => {
           }
           
           // Reseta os estados
+          setMaxRecordingReached(false);
           setAudioChunks([]);
           setRecordingDuration(0);
         };
@@ -208,6 +239,13 @@ const MessageInput: React.FC = () => {
         
         // Inicia o timer imediatamente
         updateRecordingTimer();
+        
+        // Define um timeout para finalizar automaticamente após 5 minutos
+        recordingTimeoutRef.current = window.setTimeout(() => {
+          if (recorder && recorder.state !== 'inactive') {
+            finishAndSendRecording();
+          }
+        }, MAX_RECORDING_TIME * 1000);
         
       } catch (err) {
         console.error("Erro ao acessar microfone:", err);
@@ -257,6 +295,23 @@ const MessageInput: React.FC = () => {
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
+
+  // Limpa recursos quando o componente é desmontado
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      
+      if (recordingTimeoutRef.current) {
+        clearTimeout(recordingTimeoutRef.current);
+      }
+    };
+  }, [stream]);
   
   return (
     <form 
@@ -294,6 +349,7 @@ const MessageInput: React.FC = () => {
           <span className="text-sm text-white">
             Gravando: {formatRecordingTime(recordingDuration)}
           </span>
+          {maxRecordingReached && <span className="text-sm text-yellow-300 ml-2">(Limite atingido)</span>}
         </div>
       )}
       
@@ -321,7 +377,7 @@ const MessageInput: React.FC = () => {
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
+                className="text-white/70 hover:text-white hover:bg-nebula-blue/20 bg-transparent h-9 w-9"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isLoading}
               >
@@ -342,7 +398,7 @@ const MessageInput: React.FC = () => {
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="text-white/70 hover:text-white hover:bg-nebula-blue/20 h-9 w-9"
+                className="text-white/70 hover:text-white hover:bg-nebula-blue/20 bg-transparent h-9 w-9"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
               >
@@ -359,7 +415,7 @@ const MessageInput: React.FC = () => {
             </>
           )}
           
-          {/* Voice recording button - garantindo fundo transparente quando não está gravando */}
+          {/* Voice recording button */}
           <Button
             type="button"
             size="icon"
@@ -375,7 +431,7 @@ const MessageInput: React.FC = () => {
             {isRecording ? <MicOff size={16} /> : <Mic size={18} />}
           </Button>
           
-          {/* Cancel recording button - corrigido para realmente cancelar a gravação */}
+          {/* Cancel recording button */}
           {isRecording && (
             <Button
               type="button"
@@ -383,8 +439,8 @@ const MessageInput: React.FC = () => {
               variant="ghost"
               className="text-red-500 hover:text-red-600 hover:bg-red-500/10 h-9 w-9"
               onClick={(e) => {
-                e.preventDefault(); // Previne qualquer comportamento padrão
-                cancelRecording(); // Chama a função de cancelamento
+                e.preventDefault();
+                cancelRecording();
               }}
             >
               <X size={18} />

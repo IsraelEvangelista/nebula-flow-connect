@@ -42,7 +42,9 @@ const Chat: React.FC = () => {
       </div>
       
       {/* Header with higher z-index */}
-      <ChatHeader />
+      <div className="relative z-10">
+        <ChatHeader />
+      </div>
       
       <main className="flex-1 overflow-y-auto p-4 relative z-10">
         <div className="space-y-4">
@@ -77,7 +79,9 @@ const Chat: React.FC = () => {
         </div>
       </main>
       
-      <MessageInput />
+      <div className="relative z-10">
+        <MessageInput />
+      </div>
     </div>
   );
 };

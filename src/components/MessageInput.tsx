@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, ChangeEvent } from 'react';
 import { useChat, type Attachment } from '@/context/ChatContext';
 import { Send, Mic, MicOff, Image, File, X } from 'lucide-react';
@@ -328,7 +327,7 @@ const MessageInput: React.FC = () => {
             className={`${
               isRecording 
                 ? 'bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:from-nebula-purple/90 hover:to-nebula-blue/90 rounded-full'
-                : 'text-white/70 hover:text-white hover:bg-nebula-blue/20'
+                : 'text-white/70 hover:text-white hover:bg-transparent'
             } h-9 w-9`}
             onClick={toggleRecording}
             disabled={isLoading}

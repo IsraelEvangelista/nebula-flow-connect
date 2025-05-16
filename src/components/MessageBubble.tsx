@@ -3,7 +3,8 @@ import { Attachment } from '@/context/ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useContext } from 'react';
 import { BackgroundContext } from '@/context/BackgroundContext';
-import { FileIcon, ImageIcon, FileText, File, FileCode, FileX, FileAudio, FileVideo } from 'lucide-react';
+import { FileIcon, ImageIcon, FileText, File, FileCode, FileX, FileAudio, FileVideo, Play, Pause } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 
 export interface MessageBubbleProps {
   content: string;
@@ -41,6 +42,86 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
       return <File className="h-8 w-8 text-gray-400" />;
     }
   };
+  
+  // Audio player component
+  const AudioPlayer = ({ audioData, mimeType }: { audioData: string, mimeType: string }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    
+    useEffect(() => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      
+      const updateTime = () => setCurrentTime(audio.currentTime);
+      const handleDurationChange = () => setDuration(audio.duration);
+      const handleEnded = () => setIsPlaying(false);
+      
+      audio.addEventListener('timeupdate', updateTime);
+      audio.addEventListener('durationchange', handleDurationChange);
+      audio.addEventListener('ended', handleEnded);
+      
+      return () => {
+        audio.removeEventListener('timeupdate', updateTime);
+        audio.removeEventListener('durationchange', handleDurationChange);
+        audio.removeEventListener('ended', handleEnded);
+      };
+    }, []);
+    
+    const togglePlayPause = () => {
+      if (!audioRef.current) return;
+      
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      
+      setIsPlaying(!isPlaying);
+    };
+    
+    const formatTime = (time: number) => {
+      const minutes = Math.floor(time / 60);
+      const seconds = Math.floor(time % 60);
+      return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    };
+    
+    return (
+      <div className="flex items-center space-x-2 w-full max-w-[240px]">
+        <button 
+          onClick={togglePlayPause}
+          className="bg-nebula-blue/30 rounded-full p-2 transition-all hover:bg-nebula-blue/50"
+        >
+          {isPlaying ? (
+            <Pause size={16} className="text-white" />
+          ) : (
+            <Play size={16} className="text-white" />
+          )}
+        </button>
+        
+        <div className="flex-1">
+          <div className="bg-gray-700/30 h-1 rounded-full w-full">
+            <div 
+              className="bg-nebula-blue h-1 rounded-full" 
+              style={{ width: `${(currentTime / duration) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+        
+        <div className="text-xs text-gray-300 min-w-[40px]">
+          {formatTime(currentTime)}
+        </div>
+        
+        <audio 
+          ref={audioRef} 
+          className="hidden"
+        >
+          <source src={`data:${mimeType};base64,${audioData}`} type={mimeType} />
+        </audio>
+      </div>
+    );
+  };
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} w-full mb-4`}>
@@ -63,23 +144,16 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
                     <img 
                       src={`data:${attachment.mimeType};base64,${attachment.data}`}
                       alt={attachment.name} 
-                      className="max-w-full max-h-[150px] rounded-lg object-contain" // Reduced max height
+                      className="max-w-full max-h-[150px] rounded-lg object-contain"
                     />
                   </div>
                 )}
                 {attachment.type === 'audio' && (
                   <div className="flex flex-col">
-                    <audio 
-                      controls 
-                      className="w-full max-w-[240px] h-10 rounded-full focus:outline-none"
-                      style={{
-                        backgroundColor: 'rgba(0,0,0,0.2)',
-                        borderRadius: '20px'
-                      }}
-                    >
-                      <source src={`data:${attachment.mimeType};base64,${attachment.data}`} type={attachment.mimeType} />
-                      Your browser does not support the audio element.
-                    </audio>
+                    <AudioPlayer 
+                      audioData={attachment.data}
+                      mimeType={attachment.mimeType}
+                    />
                   </div>
                 )}
                 {attachment.type === 'document' && (

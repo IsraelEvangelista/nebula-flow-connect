@@ -1,10 +1,13 @@
 
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { useGreeting } from "@/hooks/useGreeting";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const ChatHeader = () => {
   const navigate = useNavigate();
@@ -13,6 +16,7 @@ export const ChatHeader = () => {
   const [animationPhase, setAnimationPhase] = useState("typing"); // typing, complete, moving
   const [scrollPosition, setScrollPosition] = useState(0);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   
   const fullText = `${greeting}`;
   const containerWidth = isMobile ? 200 : 300; // Reduced width on mobile
@@ -56,6 +60,24 @@ export const ChatHeader = () => {
     setScrollPosition(0);
   }, [greeting]);
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Ocorreu um erro ao tentar sair",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-700 w-full z-20 relative">
       <div className="flex items-center">
@@ -92,9 +114,33 @@ export const ChatHeader = () => {
       </div>
       
       <div className="flex gap-2">
-        <Button variant="ghost" size={isMobile ? "sm" : "icon"} onClick={() => navigate("/settings")}>
-          <Settings className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size={isMobile ? "sm" : "icon"}>
+              <Settings className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 bg-slate-800 border-slate-700 text-white p-0">
+            <div className="flex flex-col">
+              <Button 
+                variant="ghost" 
+                className="justify-start px-4 py-2 hover:bg-slate-700" 
+                onClick={() => navigate("/settings")}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="justify-start px-4 py-2 text-red-400 hover:text-red-300 hover:bg-slate-700"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );

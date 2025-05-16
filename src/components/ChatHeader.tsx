@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Tool, LogOut, Settings } from "lucide-react";
+import { Wrench, LogOut, Settings } from "lucide-react";
 import { useGreeting } from "@/hooks/useGreeting";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -117,7 +117,7 @@ export const ChatHeader = () => {
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size={isMobile ? "sm" : "icon"}>
-              <Tool className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
+              <Wrench className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 bg-slate-800 border-slate-700 text-white p-0">

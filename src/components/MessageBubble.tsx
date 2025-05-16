@@ -1,4 +1,3 @@
-
 import { Attachment } from '@/context/ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
 import { useContext, useState, useRef, useEffect } from 'react';
@@ -42,7 +41,7 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
     }
   };
   
-  // Audio player component
+  // Audio player component - improved to match WhatsApp style
   const AudioPlayer = ({ audioData, mimeType }: { audioData: string, mimeType: string }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -102,7 +101,7 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
     };
     
     return (
-      <div className="flex items-center space-x-2 w-[240px] bg-blue-600/40 rounded-lg p-3">
+      <div className="flex items-center space-x-2 w-[200px] bg-blue-600/40 rounded-lg p-2.5">
         <button 
           onClick={togglePlayPause}
           className="bg-blue-500/60 rounded-full p-2.5 transition-all hover:bg-blue-500/80 flex-shrink-0"

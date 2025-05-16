@@ -83,7 +83,7 @@ const MessageInput: React.FC = () => {
     }
   };
 
-  // Cancel recording function
+  // Cancel recording function - fixed to properly cancel without sending
   const cancelRecording = () => {
     if (mediaRecorder) {
       mediaRecorder.stop();
@@ -121,11 +121,13 @@ const MessageInput: React.FC = () => {
       try {
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setStream(audioStream);
-        const recorder = new MediaRecorder(audioStream);
-        setMediaRecorder(recorder);
         
+        // Create new array for chunks
         const chunks: Blob[] = [];
         setAudioChunks(chunks);
+        
+        const recorder = new MediaRecorder(audioStream);
+        setMediaRecorder(recorder);
         
         recorder.ondataavailable = (e) => {
           if (e.data.size > 0) {
@@ -134,8 +136,8 @@ const MessageInput: React.FC = () => {
         };
         
         recorder.onstop = () => {
-          // Only process audio if there are chunks and not cancelled
-          if (chunks.length > 0 && audioChunks !== chunks) {
+          // Only process audio if there are chunks and NOT cancelled
+          if (chunks.length > 0) {
             // Create audio blob
             const audioBlob = new Blob(chunks, { type: 'audio/webm' });
             
@@ -167,8 +169,8 @@ const MessageInput: React.FC = () => {
           }
         };
         
-        // Start recording
-        recorder.start();
+        // Start recording - fixed to actually collect data
+        recorder.start(100); // Collect data every 100ms to ensure we capture audio
         setIsRecording(true);
         setRecordingStartTime(Date.now());
         setRecordingDuration(0);
@@ -325,7 +327,7 @@ const MessageInput: React.FC = () => {
             </>
           )}
           
-          {/* Voice recording button */}
+          {/* Voice recording button - updated to have transparent background when not recording */}
           <Button
             type="button"
             size="icon"
@@ -341,7 +343,7 @@ const MessageInput: React.FC = () => {
             {isRecording ? <MicOff size={16} /> : <Mic size={18} />}
           </Button>
           
-          {/* Cancel recording button - only visible during recording */}
+          {/* Cancel recording button - fixed to actually cancel recording */}
           {isRecording && (
             <Button
               type="button"

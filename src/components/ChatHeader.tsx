@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Wrench, LogOut, Settings } from "lucide-react";
+import { Menu, Wrench, LogOut, Settings, Calendar, Layout, Youtube, Music, FileText, BarChart2 } from "lucide-react";
 import { useGreeting } from "@/hooks/useGreeting";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -78,17 +78,25 @@ export const ChatHeader = () => {
     }
   };
 
+  // Ferramentas disponíveis
+  const tools = [
+    { name: "Calendário", icon: Calendar, route: "/calendar", available: true },
+    { name: "Projetos", icon: Layout, route: "/projects", available: false },
+    { name: "Youtube", icon: Youtube, route: "/youtube", available: true },
+    { name: "Música", icon: Music, route: "/music", available: true },
+    { name: "Análises", icon: FileText, route: "/analysis", available: false },
+    { name: "Recomendações", icon: BarChart2, route: "/recommendations", available: false }
+  ];
+
   return (
     <div className="flex items-center justify-between p-4 bg-slate-900 border-b border-slate-700 w-full z-20 relative">
       <div className="flex items-center">
-        <div 
-          className="cursor-pointer mr-4" 
-          onClick={() => navigate("/tools")}
-        >
+        {/* Logo com efeito de luz */}
+        <div className="mr-4">
           <img 
             src="/lovable-uploads/af36109a-107a-4fb7-8951-8e005cb8fa45.png" 
             alt="Nebula" 
-            className="h-8 w-auto"
+            className="h-8 w-auto animate-pulse"
             onError={(e) => {
               // Fallback in case image doesn't load
               e.currentTarget.style.display = 'none';
@@ -99,6 +107,32 @@ export const ChatHeader = () => {
             }}
           />
         </div>
+        
+        {/* Menu de ferramentas */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size={isMobile ? "sm" : "icon"} className="mr-2">
+              <Wrench className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 bg-slate-800 border-slate-700 text-white p-0">
+            <div className="flex flex-col">
+              {tools.map((tool) => (
+                <Button 
+                  key={tool.name}
+                  variant="ghost" 
+                  className={`justify-start px-4 py-2 ${tool.available ? 'hover:bg-slate-700' : 'text-slate-500 cursor-not-allowed'}`}
+                  onClick={() => tool.available ? navigate(tool.route) : null}
+                  disabled={!tool.available}
+                >
+                  <tool.icon className="mr-2 h-4 w-4" />
+                  <span>{tool.name}</span>
+                  {!tool.available && <span className="ml-auto text-xs">Em breve</span>}
+                </Button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
         
         <div className="overflow-hidden" style={{ width: `${containerWidth}px` }}>
           <h1 
@@ -117,7 +151,7 @@ export const ChatHeader = () => {
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size={isMobile ? "sm" : "icon"}>
-              <Wrench className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
+              <Menu className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-white`} />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 bg-slate-800 border-slate-700 text-white p-0">

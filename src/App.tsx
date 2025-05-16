@@ -15,8 +15,10 @@ import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
-import Tools from "./pages/Tools";
 import NotFound from "./pages/NotFound";
+import Calendar from "./pages/Calendar";
+import Youtube from "./pages/Youtube";
+import Music from "./pages/Music";
 
 const queryClient = new QueryClient();
 
@@ -70,10 +72,26 @@ const App = () => {
                       } 
                     />
                     <Route 
-                      path="/tools" 
+                      path="/calendar" 
                       element={
                         <ProtectedRoute>
-                          <Tools />
+                          <Calendar />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/youtube" 
+                      element={
+                        <ProtectedRoute>
+                          <Youtube />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/music" 
+                      element={
+                        <ProtectedRoute>
+                          <Music />
                         </ProtectedRoute>
                       } 
                     />

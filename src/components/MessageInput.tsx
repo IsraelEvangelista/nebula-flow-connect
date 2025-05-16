@@ -83,26 +83,37 @@ const MessageInput: React.FC = () => {
     }
   };
 
-  // Cancel recording function - fixed to properly cancel without sending
+  // Completo redesenho da função de cancelar gravação para garantir que não envie o áudio
   const cancelRecording = () => {
-    if (mediaRecorder) {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      // Primeiro interrompe o MediaRecorder
       mediaRecorder.stop();
+      
+      // Limpa todos os estados relacionados à gravação
       setIsRecording(false);
       setRecordingStartTime(null);
-      setAudioChunks([]);
       setRecordingDuration(0);
       
+      // Limpa o timer
       if (timerRef.current) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
 
-      // Stop all audio tracks
+      // Limpa os chunks de áudio
+      setAudioChunks([]);
+      
+      // Para todas as trilhas de áudio
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(track => {
+          if (track.readyState === 'live') {
+            track.stop();
+          }
+        });
         setStream(null);
       }
 
+      // Feedback visual para o usuário
       toast({
         title: "Gravação cancelada",
         description: "A gravação de áudio foi cancelada",
@@ -110,52 +121,68 @@ const MessageInput: React.FC = () => {
     }
   };
   
-  // Toggle voice recording
+  // Toggle voice recording - Reescrito para garantir que a gravação funcione corretamente
   const toggleRecording = async () => {
     if (isRecording && mediaRecorder) {
-      // Stop recording and send audio
+      // Envia o áudio gravado
       stopRecording();
-      // Audio will be processed in the mediaRecorder.onstop event handler
+      // O processamento do áudio ocorre no evento onstop do mediaRecorder
     } else {
-      // Start recording
+      // Inicia a gravação
       try {
-        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Obtém acesso ao microfone
+        const audioStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { 
+            echoCancellation: true,
+            noiseSuppression: true
+          } 
+        });
+        
         setStream(audioStream);
         
-        // Create new array for chunks
+        // Cria um novo array para os chunks
         const chunks: Blob[] = [];
-        setAudioChunks(chunks);
         
-        const recorder = new MediaRecorder(audioStream);
+        // Configura o MediaRecorder com melhor qualidade
+        const options = { 
+          mimeType: 'audio/webm;codecs=opus',
+          audioBitsPerSecond: 128000
+        };
+        
+        // Fallback se o navegador não suportar o codec especificado
+        const recorder = new MediaRecorder(audioStream, 
+          MediaRecorder.isTypeSupported(options.mimeType) ? options : {});
+        
         setMediaRecorder(recorder);
         
+        // Define os handlers de eventos
         recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
+          if (e.data && e.data.size > 0) {
             chunks.push(e.data);
           }
         };
         
         recorder.onstop = () => {
-          // Only process audio if there are chunks and NOT cancelled
-          if (chunks.length > 0) {
-            // Create audio blob
-            const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+          // Processa o áudio se houver chunks e não foi cancelado
+          if (chunks.length > 0 && recordingDuration > 0) {
+            // Cria o blob de áudio
+            const audioBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
             
-            // Convert to base64
+            // Converte para base64
             const reader = new FileReader();
             reader.onloadend = () => {
               if (reader.result) {
                 const base64data = (reader.result as string).split(',')[1];
                 
-                // Add as attachment
+                // Adiciona como anexo
                 const newAttachment: Attachment = {
                   type: 'audio',
                   data: base64data,
                   name: `Audio_${new Date().toISOString().replace(/[:.]/g, '-')}.webm`,
-                  mimeType: 'audio/webm'
+                  mimeType: recorder.mimeType || 'audio/webm'
                 };
                 
-                // Send message immediately with just the audio
+                // Envia mensagem com o áudio
                 sendMessage("", [newAttachment]);
               }
             };
@@ -163,22 +190,27 @@ const MessageInput: React.FC = () => {
             reader.readAsDataURL(audioBlob);
           }
           
-          // Stop all audio tracks
+          // Para todas as trilhas de áudio
           if (audioStream) {
             audioStream.getTracks().forEach(track => track.stop());
           }
+          
+          // Reseta os estados
+          setAudioChunks([]);
+          setRecordingDuration(0);
         };
         
-        // Start recording - fixed to actually collect data
-        recorder.start(100); // Collect data every 100ms to ensure we capture audio
+        // Inicia a gravação com coleta frequente de dados
+        recorder.start(200); // Coleta dados a cada 200ms
         setIsRecording(true);
         setRecordingStartTime(Date.now());
         setRecordingDuration(0);
         
-        // Start timer immediately
+        // Inicia o timer imediatamente
         updateRecordingTimer();
+        
       } catch (err) {
-        console.error("Error accessing microphone:", err);
+        console.error("Erro ao acessar microfone:", err);
         toast({
           title: "Erro ao acessar microfone",
           description: "Verifique as permissões do navegador",
@@ -327,7 +359,7 @@ const MessageInput: React.FC = () => {
             </>
           )}
           
-          {/* Voice recording button - updated to have transparent background when not recording */}
+          {/* Voice recording button - garantindo fundo transparente quando não está gravando */}
           <Button
             type="button"
             size="icon"
@@ -343,14 +375,17 @@ const MessageInput: React.FC = () => {
             {isRecording ? <MicOff size={16} /> : <Mic size={18} />}
           </Button>
           
-          {/* Cancel recording button - fixed to actually cancel recording */}
+          {/* Cancel recording button - corrigido para realmente cancelar a gravação */}
           {isRecording && (
             <Button
               type="button"
               size="icon"
               variant="ghost"
               className="text-red-500 hover:text-red-600 hover:bg-red-500/10 h-9 w-9"
-              onClick={cancelRecording}
+              onClick={(e) => {
+                e.preventDefault(); // Previne qualquer comportamento padrão
+                cancelRecording(); // Chama a função de cancelamento
+              }}
             >
               <X size={18} />
             </Button>

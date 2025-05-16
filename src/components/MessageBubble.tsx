@@ -1,10 +1,9 @@
 
 import { Attachment } from '@/context/ChatContext';
 import MarkdownRenderer from './MarkdownRenderer';
-import { useContext } from 'react';
+import { useContext, useState, useRef, useEffect } from 'react';
 import { BackgroundContext } from '@/context/BackgroundContext';
 import { FileIcon, ImageIcon, FileText, File, FileCode, FileX, FileAudio, FileVideo, Play, Pause } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
 
 export interface MessageBubbleProps {
   content: string;
@@ -49,6 +48,7 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const progressBarRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
       const audio = audioRef.current;
@@ -87,29 +87,46 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
       return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     };
     
+    const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!audioRef.current || !progressBarRef.current) return;
+      
+      const progressBar = progressBarRef.current;
+      const rect = progressBar.getBoundingClientRect();
+      const clickPositionX = e.clientX - rect.left;
+      const progressBarWidth = rect.width;
+      const clickPositionRatio = clickPositionX / progressBarWidth;
+      
+      const newTime = clickPositionRatio * duration;
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    };
+    
     return (
-      <div className="flex items-center space-x-2 w-full max-w-[240px]">
+      <div className="flex items-center space-x-2 w-[240px] bg-blue-600/40 rounded-lg p-3">
         <button 
           onClick={togglePlayPause}
-          className="bg-nebula-blue/30 rounded-full p-2 transition-all hover:bg-nebula-blue/50"
+          className="bg-blue-500/60 rounded-full p-2.5 transition-all hover:bg-blue-500/80 flex-shrink-0"
         >
           {isPlaying ? (
             <Pause size={16} className="text-white" />
           ) : (
-            <Play size={16} className="text-white" />
+            <Play size={16} className="text-white ml-0.5" />
           )}
         </button>
         
-        <div className="flex-1">
-          <div className="bg-gray-700/30 h-1 rounded-full w-full">
+        <div className="flex-1 cursor-pointer" onClick={handleProgressBarClick}>
+          <div 
+            ref={progressBarRef}
+            className="bg-blue-300/30 h-1 rounded-full w-full"
+          >
             <div 
-              className="bg-nebula-blue h-1 rounded-full" 
-              style={{ width: `${(currentTime / duration) * 100}%` }}
+              className="bg-blue-300 h-1 rounded-full" 
+              style={{ width: `${(currentTime / Math.max(0.1, duration)) * 100}%` }}
             ></div>
           </div>
         </div>
         
-        <div className="text-xs text-gray-300 min-w-[40px]">
+        <div className="text-xs text-white/80 min-w-[40px] flex-shrink-0">
           {formatTime(currentTime)}
         </div>
         
@@ -143,7 +160,7 @@ export const MessageBubble = ({ content, sender, timestamp, attachments }: Messa
                   <div className="flex flex-col items-center">
                     <img 
                       src={`data:${attachment.mimeType};base64,${attachment.data}`}
-                      alt={attachment.name} 
+                      alt="Attached image" 
                       className="max-w-full max-h-[150px] rounded-lg object-contain"
                     />
                   </div>

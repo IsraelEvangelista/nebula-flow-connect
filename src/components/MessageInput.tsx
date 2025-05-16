@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, ChangeEvent } from 'react';
 import { useChat, type Attachment } from '@/context/ChatContext';
 import { Send, Mic, MicOff, Image, File, X } from 'lucide-react';
@@ -89,6 +90,7 @@ const MessageInput: React.FC = () => {
       setIsRecording(false);
       setRecordingStartTime(null);
       setAudioChunks([]);
+      setRecordingDuration(0);
       
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -98,6 +100,7 @@ const MessageInput: React.FC = () => {
       // Stop all audio tracks
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
+        setStream(null);
       }
 
       toast({
@@ -132,7 +135,7 @@ const MessageInput: React.FC = () => {
         
         recorder.onstop = () => {
           // Only process audio if there are chunks and not cancelled
-          if (chunks.length > 0) {
+          if (chunks.length > 0 && audioChunks !== chunks) {
             // Create audio blob
             const audioBlob = new Blob(chunks, { type: 'audio/webm' });
             
@@ -169,6 +172,8 @@ const MessageInput: React.FC = () => {
         setIsRecording(true);
         setRecordingStartTime(Date.now());
         setRecordingDuration(0);
+        
+        // Start timer immediately
         updateRecordingTimer();
       } catch (err) {
         console.error("Error accessing microphone:", err);
@@ -324,10 +329,11 @@ const MessageInput: React.FC = () => {
           <Button
             type="button"
             size="icon"
+            variant={isRecording ? "default" : "ghost"}
             className={`${
               isRecording 
                 ? 'bg-gradient-to-r from-nebula-purple to-nebula-blue text-white hover:from-nebula-purple/90 hover:to-nebula-blue/90 rounded-full'
-                : 'text-white/70 hover:text-white hover:bg-transparent'
+                : 'text-white/70 hover:text-white hover:bg-transparent bg-transparent'
             } h-9 w-9`}
             onClick={toggleRecording}
             disabled={isLoading}
